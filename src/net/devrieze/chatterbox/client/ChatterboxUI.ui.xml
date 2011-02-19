@@ -1,0 +1,62 @@
+<ui:UiBinder xmlns:ui='urn:ui:com.google.gwt.uibinder' xmlns:g='urn:import:com.google.gwt.user.client.ui'>
+  <ui:style type='net.devrieze.chatterbox.client.ChatterboxUI.MyStyle'>
+    .errorLabel {
+    	 text-align: center;
+    	 margin-top: 0.1em;
+    }
+    .outputBox {
+    	overflow: auto;
+    	border: 1px solid black;
+    	margin: 1ex;
+    	background-color: #ffffc0;
+    	position: absolute;
+    	bottom: 0px;
+    	top:0px;
+    	left:0px;
+    	right:0px;
+    	padding-top: 0.5ex;
+    }
+    .outputBox > div {
+    	border-bottom: 1px dotted gray;
+    	padding-left: 1ex;
+    	padding-right: 1ex;
+    	padding-bottom: 0.5ex;
+    	padding-top: 0.5ex;
+    }
+    
+    
+    .outputBox > div.even {
+    	background-color: #c0c0ff;
+    }
+    .inputBox {
+      border: 1px solid black;
+      margin-left: 1ex;
+      margin-right: 1ex;
+      margin-bottom: 1ex;
+   	}
+   	@external sendButton;
+   	.sendButton {
+   		margin-left: 1ex;
+    }
+  </ui:style>
+  <g:RootLayoutPanel>
+    <g:layer>
+		  <g:DockLayoutPanel unit="EM">
+		    <g:north size="1.25">
+		      <g:Label ui:field='errorLabel' addStyleNames="{style.errorLabel}"></g:Label>
+		    </g:north>
+		    <g:center>
+		      <g:HTML>
+		        <div class="{style.outputBox}" ui:field='outputdiv'><div>Here is where text lives.</div><div class="{style.even}">second line</div></div>
+		      </g:HTML>
+		    </g:center>
+		    <g:south size="3">
+	        <g:DockLayoutPanel addStyleNames="{style.inputBox}" unit="EM">
+		        <g:center><g:TextBox ui:field='textBox' focus="true">initial text</g:TextBox></g:center>
+		        <g:east size="10"><g:Button text="send" ui:field='sendButton'></g:Button></g:east>
+	        </g:DockLayoutPanel>
+		    </g:south>
+		  </g:DockLayoutPanel>
+    </g:layer>
+  </g:RootLayoutPanel>
+</ui:UiBinder>
