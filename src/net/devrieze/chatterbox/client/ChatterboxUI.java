@@ -161,8 +161,8 @@ public class ChatterboxUI extends Composite implements ChannelCreatedCallback {
       }
 
       public void onSuccess(String result) {
-        addOutput(result);
-        errorLabel.setText("RPC successful");
+//        addOutput(result);
+//        errorLabel.setText("RPC successful");
         textBox.setText("");
         textBox.setFocus(true);
       }
