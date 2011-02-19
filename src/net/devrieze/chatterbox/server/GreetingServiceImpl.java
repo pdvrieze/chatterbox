@@ -10,6 +10,7 @@ import javax.jdo.PersistenceManagerFactory;
 import net.devrieze.chatterbox.client.GreetingService;
 import net.devrieze.chatterbox.shared.FieldVerifier;
 
+import com.google.appengine.api.channel.ChannelFailureException;
 import com.google.appengine.api.channel.ChannelMessage;
 import com.google.appengine.api.channel.ChannelService;
 import com.google.appengine.api.channel.ChannelServiceFactory;
@@ -50,8 +51,7 @@ public class GreetingServiceImpl extends RemoteServiceServlet implements Greetin
     userAgent = escapeHtml(userAgent);
 
 
-    String message = "Hello, " + input + "!<br><br>I am running " + serverInfo + ".<br><br>It looks like you are using:<br>" + userAgent;
-    sendMessageToChannels(message);
+    sendMessageToChannels(input);
 
     return Integer.toString(seqNo++);
   }
@@ -62,12 +62,14 @@ public class GreetingServiceImpl extends RemoteServiceServlet implements Greetin
    */
   private String createChannel() {
     String token;
+    String clientid;
     PersistenceManager pm = getPMF().getPersistenceManager();
     try {
       TokenList tokens = getTokenList(pm);
-      token = channelService.createChannel("client" + tokens.size()+1);
-      tokens.add(token);
-      System.out.println("Channel token: \""+token+"\"");
+      clientid="client"+tokens.size()+1;
+      token = channelService.createChannel(clientid);
+      tokens.add(clientid);
+      System.out.println("Channel token: \""+token+"\" key:\""+clientid+"\"");
     } finally {
       pm.close();
     }
@@ -79,21 +81,21 @@ public class GreetingServiceImpl extends RemoteServiceServlet implements Greetin
     PersistenceManager pm = getPMF().getPersistenceManager();
     try {
       tokens = getTokenList(pm);
-    } finally {
-      pm.close();
-    }
-    if (tokens !=null) {
-      Iterator<String> it= tokens.iterator();
-      while (it.hasNext()) {
-        String token = it.next();
-        try {
-          System.out.println("Sending message to: \""+token+"\"");
-          channelService.sendMessage(new ChannelMessage(token, message));
-        } catch (RuntimeException e) {
-          e.printStackTrace();
-          //it.remove();
+      if (tokens !=null) {
+        Iterator<String> it= tokens.iterator();
+        while (it.hasNext()) {
+          String clientid = it.next();
+          try {
+            System.out.println("Sending message to: \""+clientid+"\"");
+            channelService.sendMessage(new ChannelMessage(clientid, message));
+          } catch (ChannelFailureException e) {
+            System.out.println("Invalidating channel: "+clientid);
+            it.remove();
+          }
         }
       }
+    } finally {
+      pm.close();
     }
   }
 
