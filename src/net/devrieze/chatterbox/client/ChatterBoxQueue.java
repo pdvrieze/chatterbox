@@ -10,13 +10,13 @@ import com.google.gwt.appengine.channel.client.ChannelFactory;
 import com.google.gwt.appengine.channel.client.Socket;
 import com.google.gwt.appengine.channel.client.SocketError;
 import com.google.gwt.appengine.channel.client.SocketListener;
-import com.google.gwt.core.client.GWT;
 import com.google.gwt.event.shared.EventBus;
 import com.google.gwt.http.client.Request;
 import com.google.gwt.http.client.RequestBuilder;
 import com.google.gwt.http.client.RequestCallback;
 import com.google.gwt.http.client.RequestException;
 import com.google.gwt.http.client.Response;
+import com.google.gwt.user.client.Timer;
 import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.Window.ClosingEvent;
 import com.google.gwt.xml.client.Document;
@@ -35,7 +35,17 @@ public class ChatterBoxQueue implements Window.ClosingHandler{
     
     @Override
     public void onOpen() {
-      eventBus.fireEventFromSource(new StatusEvent(StatusLevel.INFO, "channel opened"),ChatterBoxQueue.this);
+      if (!isUseChannel()) {
+        if (channelSocket!=null) {
+          channelSocket.close();
+          channelSocket = null;
+          eventBus.fireEventFromSource(new StatusEvent(StatusLevel.INFO, "channel opened when close requested, closing it again"),ChatterBoxQueue.this);
+        } else {
+          eventBus.fireEventFromSource(new StatusEvent(StatusLevel.INFO, "channel opened when close requested, socket lost"),ChatterBoxQueue.this);
+        }
+      } else {
+        eventBus.fireEventFromSource(new StatusEvent(StatusLevel.INFO, "channel opened"),ChatterBoxQueue.this);
+      }
     }
 
     @Override
@@ -290,20 +300,29 @@ public class ChatterBoxQueue implements Window.ClosingHandler{
   }
 
   private void connectToChannel() {
-    
     RequestBuilder rb = new RequestBuilder(RequestBuilder.POST, CONNECTURL);
     try {
       Request request = rb.sendRequest(null, new RequestCallback() {
         
         @Override
         public void onResponseReceived(Request request, Response response) {
+          useChannel = true;
           handleChannelHandleReceived(request, response);
         }
 
         @Override
         public void onError(Request request, Throwable exception) {
-          useChannel = false;
-          eventBus.fireEventFromSource(new StatusEvent(StatusLevel.WARNING, "Channel connect request failed", exception), this);
+          eventBus.fireEventFromSource(new StatusEvent(StatusLevel.INFO, "Channel connect request failed, retrying in 3 seconds", exception), this);
+          new Timer() {
+            
+            @Override
+            public void run() {
+              if (isUseChannel()) {
+                connectToChannel();
+              } 
+            }
+          }.schedule(3000);
+          
         }
       });
     } catch (RequestException e) {
