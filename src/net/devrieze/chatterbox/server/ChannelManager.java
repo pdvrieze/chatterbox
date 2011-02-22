@@ -37,7 +37,7 @@ public class ChannelManager {
     } finally {
       pm.close();
     }
-    return "<token>" + token + "</token>";
+    return "<channel>" + token + "</channel>";
   }
 
   Message sendMessageToChannels(String messageBody) {
