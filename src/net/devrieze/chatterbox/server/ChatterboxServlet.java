@@ -20,13 +20,19 @@ import org.apache.http.HttpStatus;
 public class ChatterboxServlet extends HttpServlet {
 
   private static final long serialVersionUID = 3717262307787043062L;
+  
+  private static final String SECRET = "mad2011";
 
   private static PersistenceManagerFactory _pmf = null;
 
   public static PersistenceManagerFactory getPMF() {
     if (_pmf != null)
       return _pmf;
-    _pmf = JDOHelper.getPersistenceManagerFactory("transactions-optional");
+    synchronized(ChatterboxServlet.class) {
+      if (_pmf != null)
+        return _pmf;
+      _pmf = JDOHelper.getPersistenceManagerFactory("transactions-optional");
+    }
     return _pmf;
   }
 
@@ -138,12 +144,13 @@ public class ChatterboxServlet extends HttpServlet {
   private boolean handleMessage(HttpServletRequest req, HttpServletResponse resp) throws IOException {
     int contentLength = req.getContentLength();
     if (contentLength > 10240) {
-      resp.setContentType("text/hml");
+      resp.setContentType("text/html");
       System.out.println("<html><head><title>Error, too long</title></head><body><p>Message of length "+
           contentLength+" is longer than 10 kilobytes.</p></body></html>");
       resp.setStatus(HttpStatus.SC_REQUEST_TOO_LONG);
       return true;
     }
+    resp.setContentType("text/xml");
     Reader r = req.getReader();
     // Assume most text will be ascii and as such contentlength == string length
     CharBuffer message = CharBuffer.allocate(contentLength);
