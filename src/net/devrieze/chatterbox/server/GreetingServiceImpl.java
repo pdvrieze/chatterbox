@@ -1,18 +1,11 @@
 package net.devrieze.chatterbox.server;
 
-import java.util.Iterator;
 
-import javax.jdo.JDOHelper;
-import javax.jdo.JDOObjectNotFoundException;
-import javax.jdo.PersistenceManager;
 import javax.jdo.PersistenceManagerFactory;
 
 import net.devrieze.chatterbox.client.GreetingService;
 import net.devrieze.chatterbox.shared.FieldVerifier;
 
-import com.google.appengine.api.channel.ChannelFailureException;
-import com.google.appengine.api.channel.ChannelMessage;
-import com.google.appengine.api.channel.ChannelService;
 import com.google.appengine.api.channel.ChannelServiceFactory;
 import com.google.gwt.user.server.rpc.RemoteServiceServlet;
 
@@ -23,17 +16,13 @@ import com.google.gwt.user.server.rpc.RemoteServiceServlet;
 @SuppressWarnings("serial")
 public class GreetingServiceImpl extends RemoteServiceServlet implements GreetingService {
 
-  ChannelService channelService = ChannelServiceFactory.getChannelService();
+  private int seqNo = 0;
 
-  int seqNo = 0;
-
-  int clientNo = 0;
-
-  private static PersistenceManagerFactory _pmf = null;
+  private ChannelManager channelManager = new ChannelManager();
 
   public String greetServer(String input) throws IllegalArgumentException {
     if (input.startsWith("<connect>")) {
-      return createChannel();
+      return channelManager.createChannel();
     }
 
     // Verify that the input is valid. 
@@ -43,69 +32,9 @@ public class GreetingServiceImpl extends RemoteServiceServlet implements Greetin
       throw new IllegalArgumentException("Name must be at least 4 characters long");
     }
 
-    String serverInfo = getServletContext().getServerInfo();
-    String userAgent = getThreadLocalRequest().getHeader("User-Agent");
-
-    // Escape data from the client to avoid cross-site script vulnerabilities.
-    input = escapeHtml(input);
-    userAgent = escapeHtml(userAgent);
-
-
-    sendMessageToChannels(input);
+    channelManager.sendMessageToChannels(this, input);
 
     return Integer.toString(seqNo++);
-  }
-
-  /**
-   * Create a new channel for the client and connect the client to it.
-   * @return The text needed to retrieve the token by the client.
-   */
-  private String createChannel() {
-    String token;
-    String clientid;
-    PersistenceManager pm = getPMF().getPersistenceManager();
-    try {
-      TokenList tokens = getTokenList(pm);
-      clientid="client"+tokens.size()+1;
-      token = channelService.createChannel(clientid);
-      tokens.add(clientid);
-      System.out.println("Channel token: \""+token+"\" key:\""+clientid+"\"");
-    } finally {
-      pm.close();
-    }
-    return "<token>" + token + "</token>";
-  }
-
-  private void sendMessageToChannels(String message) {
-    TokenList tokens;
-    PersistenceManager pm = getPMF().getPersistenceManager();
-    try {
-      tokens = getTokenList(pm);
-      if (tokens !=null) {
-        Iterator<String> it= tokens.iterator();
-        while (it.hasNext()) {
-          String clientid = it.next();
-          try {
-            System.out.println("Sending message to: \""+clientid+"\"");
-            channelService.sendMessage(new ChannelMessage(clientid, message));
-          } catch (ChannelFailureException e) {
-            System.out.println("Invalidating channel: "+clientid);
-            it.remove();
-          }
-        }
-      }
-    } finally {
-      pm.close();
-    }
-  }
-
-  private TokenList getTokenList(PersistenceManager pm) {
-    try {
-      return pm.getObjectById(TokenList.class, TokenList.DEFAULTKEY);
-    } catch (JDOObjectNotFoundException e) {
-      TokenList tokens = new TokenList();
-      return pm.makePersistent(tokens);
-    }
   }
 
   /**
@@ -120,12 +49,5 @@ public class GreetingServiceImpl extends RemoteServiceServlet implements Greetin
       return null;
     }
     return html.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
-  }
-
-  private static PersistenceManagerFactory getPMF() {
-    if (_pmf != null)
-      return _pmf;
-    _pmf = JDOHelper.getPersistenceManagerFactory("transactions-optional");
-    return _pmf;
   }
 }
