@@ -10,7 +10,7 @@ public class MoveMessagesEvent extends GwtEvent<MoveMessagesEvent.Handler> {
     void onMoveMessages(MoveMessagesEvent event);
   }
   
-  public static Type<Handler> type = new Type<MoveMessagesEvent.Handler>();
+  public static final Type<Handler> TYPE = new Type<MoveMessagesEvent.Handler>();
   private final int moveAmount;
 
   public MoveMessagesEvent(int moveAmount) {
@@ -20,7 +20,7 @@ public class MoveMessagesEvent extends GwtEvent<MoveMessagesEvent.Handler> {
   
   @Override
   public com.google.gwt.event.shared.GwtEvent.Type<Handler> getAssociatedType() {
-    return type;
+    return TYPE;
   }
 
   @Override

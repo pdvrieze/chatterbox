@@ -10,7 +10,7 @@ public class UpdateMessageEvent extends GwtEvent<UpdateMessageEvent.Handler> {
     void onUpdateMessage(UpdateMessageEvent event);
   }
   
-  public static Type<Handler> type = new Type<UpdateMessageEvent.Handler>();
+  public static final Type<Handler> TYPE = new Type<UpdateMessageEvent.Handler>();
   private final int messageIndex;
 
   public UpdateMessageEvent(int messageIndex) {
@@ -20,7 +20,7 @@ public class UpdateMessageEvent extends GwtEvent<UpdateMessageEvent.Handler> {
   
   @Override
   public com.google.gwt.event.shared.GwtEvent.Type<Handler> getAssociatedType() {
-    return type;
+    return TYPE;
   }
 
   @Override
