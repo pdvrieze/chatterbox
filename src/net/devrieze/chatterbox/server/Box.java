@@ -127,8 +127,8 @@ public class Box {
     return key;
   }
 
-  public Message addMessage(String message) {
-    Message msg = new Message(getNextMsgIndex(),message);
+  public Message addMessage(String messageBody) {
+    Message msg = new Message(getNextMsgIndex(),messageBody);
     getMessages().add(msg);
     return msg;
   }
