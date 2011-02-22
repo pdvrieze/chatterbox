@@ -1,9 +1,8 @@
 package net.devrieze.chatterbox.server;
 
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.io.Reader;
-import java.nio.CharBuffer;
 
 import javax.jdo.JDOHelper;
 import javax.jdo.JDOObjectNotFoundException;
@@ -22,6 +21,8 @@ public class ChatterboxServlet extends HttpServlet {
   private static final long serialVersionUID = 3717262307787043062L;
   
   private static final String SECRET = "mad2011";
+
+  private static final String[] ALLOWEDTAGNAMES = { "b", "i", "p", "div", "span", "code"};
 
   private static PersistenceManagerFactory _pmf = null;
 
@@ -47,7 +48,7 @@ public class ChatterboxServlet extends HttpServlet {
   
   private static enum Target {
     CONNECT("/connect") {
-      public boolean handle(ChatterboxServlet servlet, Method method, HttpServletRequest req, HttpServletResponse resp) {
+      public boolean handle(ChatterboxServlet servlet, Method method, HttpServletRequest req, HttpServletResponse resp) throws IOException {
         if (method == Method.POST) {
           return servlet.handleConnect(req, resp);
         }
@@ -151,14 +152,108 @@ public class ChatterboxServlet extends HttpServlet {
       return true;
     }
     resp.setContentType("text/xml");
-    Reader r = req.getReader();
+    BufferedReader in = req.getReader();
+    
     // Assume most text will be ascii and as such contentlength == string length
-    CharBuffer message = CharBuffer.allocate(contentLength);
-    r.read(message);
-    Message m = channelManager.sendMessageToChannels(message.toString());
+    char[] buffer = new char[contentLength];
+    StringBuilder message = new StringBuilder(contentLength);
+    {
+      int read =  in.read(buffer);
+      while (read >=0) {
+        message.append(buffer,0,read);
+        read = in.read(buffer);
+      }
+    }
+    Message m = channelManager.sendMessageToChannels(sanitizeMessage(message.toString()));
     resp.getWriter().append(m.toXML());
     resp.setStatus(HttpStatus.SC_OK);
     return true;
+  }
+
+  private String sanitizeMessage(CharSequence message) {
+    StringBuilder result = new StringBuilder(message.length());
+    
+    for (int i = 0; i< message.length(); ++i) {
+      char c = message.charAt(i);
+      boolean closingTag=false;
+      if (c=='<') {
+        int w = -1;
+        for (int j=i+1; j<message.length(); ++j) {
+          c = message.charAt(j);
+          if (c=='<') {
+            result.append("&lt;");
+            break;
+          } else if (c=='/') {
+            if (j==i+1) {
+              closingTag=true;
+              ++i;
+            }
+          } else if (c=='>') {
+            String tagName;
+            String tagParams = null;
+            if (w<0) {
+              tagName = message.subSequence(i+1, j).toString();
+            } else {
+              tagName = message.subSequence(i+1, w).toString();
+              tagParams = message.subSequence(w+1, j).toString();
+            }
+            CharSequence cleanedUp = cleanUpTag(tagName.toLowerCase(), tagParams, closingTag);
+            if (cleanedUp!=null) {
+              result.append(cleanedUp);
+              i=j;
+            } else {
+              result.append("&lt;");
+            }
+            break;
+          } else if (w<0 && Character.isWhitespace(c)) {
+            w = j;
+          }
+        }
+      } else if (c=='>') {
+        result.append("&gt;");
+      } else if (c=='"') {
+        result.append("&quot;");
+      } else if (c=='&') {
+        if (message.length()>=i+4) {
+          String ss = message.subSequence(i+1, i+4).toString();
+          if ("lt;".equals(ss) || "gt;".equals(ss)) {
+            result.append('&');
+            continue;
+          }
+        }
+        if (message.length()>=i+5) {
+          String ss = message.subSequence(i+1, i+5).toString();
+          if ("amp;".equals(ss)) {
+            result.append('&');
+            continue;
+          }
+        }
+        if (message.length()>=i+6) {
+          String ss = message.subSequence(i+1, i+6).toString();
+          if ("quot;".equals(ss)) {
+            result.append('&');
+            continue;
+          }
+        }
+        result.append("&amp;");
+      } else {
+        result.append(c);
+      }
+    }
+    return result.toString();
+  }
+
+  private CharSequence cleanUpTag(String tagName, String tagParams, boolean closingTag) {
+    for(String t:ALLOWEDTAGNAMES) {
+      if (t.equals(tagName)) {
+        if (closingTag) {
+          return "</"+t+">";
+        } else {
+          return "<"+t+">";
+        }
+      }
+    }
+    return null;
   }
 
   private boolean handleMessages(HttpServletRequest req, HttpServletResponse resp) throws IOException {
@@ -233,9 +328,12 @@ public class ChatterboxServlet extends HttpServlet {
     return true;
   }
 
-  private boolean handleConnect(HttpServletRequest req, HttpServletResponse resp) {
-    // TODO Auto-generated method stub
-    return false;
+  private boolean handleConnect(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+    String response = channelManager.createChannel();
+    resp.getWriter().append(response);
+    resp.setContentType("text/xml");
+    resp.setStatus(HttpStatus.SC_OK);
+    return true;
   }
 
   private Target getTarget(HttpServletRequest req) {
