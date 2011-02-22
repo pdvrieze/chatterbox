@@ -23,15 +23,15 @@ public class TokenList {
   @Persistent
   private List<String> tokens;
   
+  @Persistent
+  private Integer nextClientId;
+  
   public List<String> getTokens() {
     if (tokens==null) {
       tokens = new ArrayList<String>(); 
     }
     return tokens;
   }
-  
-  @Persistent
-  private String canary = "canary";
 
   public void add(String token) {
     getTokens().add(token);
@@ -44,6 +44,26 @@ public class TokenList {
   public int size() {
     return getTokens().size();
   }
+
+  private synchronized void setNextClientId(int nextClientId) {
+    this.nextClientId = nextClientId;
+  }
+
+  public synchronized int getNextClientId() {
+    if (nextClientId==null) { nextClientId = 1; }
+    return nextClientId;
+  }
+
+  public String getClientId() {
+    int nextId;
+    synchronized (this) {
+      nextId = getNextClientId();
+      setNextClientId(nextId+1);
+    }
+    return "client"+nextId;
+  }
+  
+  
   
 //  private List<String> getTokens() {
 //    if (tokens == null) { tokens = new ArrayList<String>(); }

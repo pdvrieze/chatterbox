@@ -10,6 +10,7 @@
   <!-- <inherits name='com.google.gwt.user.theme.chrome.Chrome'/> -->
   <!-- <inherits name='com.google.gwt.user.theme.dark.Dark'/>     -->
 
+  <inherits name='com.google.gwt.xml.XML' />
   <inherits name='com.google.gwt.appengine.channel.Channel' />
 
   <!-- Other module inherits                                      -->
@@ -20,5 +21,7 @@
   <!-- Specify the paths for translatable code                    -->
   <source path='client'/>
   <source path='shared'/>
+
+  <set-property name="user.agent" value="gecko1_8,safari" />
 
 </module>

@@ -32,7 +32,7 @@ public class GreetingServiceImpl extends RemoteServiceServlet implements Greetin
       throw new IllegalArgumentException("Name must be at least 4 characters long");
     }
 
-    channelManager.sendMessageToChannels(this, input);
+    channelManager.sendMessageToChannels(input);
 
     return Integer.toString(seqNo++);
   }

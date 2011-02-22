@@ -10,10 +10,24 @@
     <servlet-name>greetServlet</servlet-name>
     <servlet-class>net.devrieze.chatterbox.server.GreetingServiceImpl</servlet-class>
   </servlet>
+  <servlet>
+    <servlet-name>chatServlet</servlet-name>
+    <servlet-class>net.devrieze.chatterbox.server.ChatterboxServlet</servlet-class>
+  </servlet>
   
   <servlet-mapping>
     <servlet-name>greetServlet</servlet-name>
     <url-pattern>/chatterbox/greet</url-pattern>
+  </servlet-mapping>
+  
+  <servlet-mapping>
+    <servlet-name>chatServlet</servlet-name>
+    <url-pattern>/chat</url-pattern>
+  </servlet-mapping>
+  
+  <servlet-mapping>
+    <servlet-name>chatServlet</servlet-name>
+    <url-pattern>/chat/*</url-pattern>
   </servlet-mapping>
   
   <!-- Default page to serve -->
