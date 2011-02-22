@@ -70,16 +70,17 @@ public class ChatterBoxQueue implements Window.ClosingHandler{
   public static final int LASTMESSAGE = -1;
   private static final String MESSAGESBASEURL = "chat/messages";
   private static final String CONNECTURL = "chat/connect";
+  private static final String MESSAGEPOSTBASEURL = "chat/messages";
   
   private ArrayList<Message> messages;
   private int firstMessage = -1;
   private int lastKnownMessage = -1;
-  private boolean working = true;
+
   private EventBus eventBus;
   private boolean useChannel;
-  private Socket channelSocket = null;
-  private Channel channel = null;
+
   private String channelKey;
+  private Socket channelSocket = null;
   
   public ChatterBoxQueue (EventBus eventBus, boolean useChannel) {
     this.eventBus = eventBus;
@@ -233,7 +234,7 @@ public class ChatterBoxQueue implements Window.ClosingHandler{
     
     RequestBuilder rb = new RequestBuilder(RequestBuilder.GET, requestURL.toString());
     try {
-      Request request = rb.sendRequest(null, new RequestCallback() {
+      rb.sendRequest(null, new RequestCallback() {
         
         @Override
         public void onResponseReceived(Request request, Response response) {
@@ -242,12 +243,10 @@ public class ChatterBoxQueue implements Window.ClosingHandler{
         
         @Override
         public void onError(Request request, Throwable exception) {
-          working = false;
           eventBus.fireEventFromSource(new StatusEvent(StatusLevel.WARNING, "Requesting messages failed", exception), this);
         }
       });
     } catch (RequestException e) {
-      working = false;
       eventBus.fireEventFromSource(new StatusEvent(StatusLevel.WARNING, "Requesting messages failed", e), this);
     }
     
@@ -293,7 +292,6 @@ public class ChatterBoxQueue implements Window.ClosingHandler{
     if (channelSocket!=null) {
       channelSocket.close();
       channelSocket = null;
-      channel = null;
       channelKey = null;
     }
     
@@ -302,7 +300,7 @@ public class ChatterBoxQueue implements Window.ClosingHandler{
   private void connectToChannel() {
     RequestBuilder rb = new RequestBuilder(RequestBuilder.POST, CONNECTURL);
     try {
-      Request request = rb.sendRequest(null, new RequestCallback() {
+      rb.sendRequest(null, new RequestCallback() {
         
         @Override
         public void onResponseReceived(Request request, Response response) {
@@ -326,7 +324,6 @@ public class ChatterBoxQueue implements Window.ClosingHandler{
         }
       });
     } catch (RequestException e) {
-      working = false;
       eventBus.fireEventFromSource(new StatusEvent(StatusLevel.WARNING, "Requesting messages failed", e), this);
     }
   }
@@ -357,7 +354,6 @@ public class ChatterBoxQueue implements Window.ClosingHandler{
         
         @Override
         public void onChannelCreated(Channel channel) {
-          ChatterBoxQueue.this.channel = channel;
           ChatterBoxQueue.this.channelSocket = channel.open(new ChannelSocketListener());
         }
       });
@@ -374,6 +370,26 @@ public class ChatterBoxQueue implements Window.ClosingHandler{
   @Override
   public void onWindowClosing(ClosingEvent event) {
     setUseChannel(false);
+  }
+
+  public void sendMessage(String textToServer) {
+    RequestBuilder rb = new RequestBuilder(RequestBuilder.POST, MESSAGEPOSTBASEURL);
+    try {
+      rb.sendRequest(textToServer, new RequestCallback() {
+        
+        @Override
+        public void onResponseReceived(Request request, Response response) {
+          handleMessagesReceived(request, response);
+        }
+
+        @Override
+        public void onError(Request request, Throwable exception) {
+          eventBus.fireEventFromSource(new StatusEvent(StatusLevel.WARNING, "Sending message failed", exception), this);
+        }
+      });
+    } catch (RequestException e) {
+      eventBus.fireEventFromSource(new StatusEvent(StatusLevel.WARNING, "Sending message failed", e), this);
+    }
   }
 
 }
