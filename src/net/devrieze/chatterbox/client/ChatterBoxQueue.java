@@ -3,69 +3,125 @@ package net.devrieze.chatterbox.client;
 import java.util.ArrayList;
 import java.util.List;
 
+import net.devrieze.chatterbox.client.StatusEvent.StatusLevel;
+
+import com.google.gwt.appengine.channel.client.Channel;
+import com.google.gwt.appengine.channel.client.ChannelFactory;
+import com.google.gwt.appengine.channel.client.Socket;
+import com.google.gwt.appengine.channel.client.SocketError;
+import com.google.gwt.appengine.channel.client.SocketListener;
 import com.google.gwt.core.client.GWT;
 import com.google.gwt.event.shared.EventBus;
-import com.google.gwt.event.shared.GwtEvent;
 import com.google.gwt.http.client.Request;
 import com.google.gwt.http.client.RequestBuilder;
 import com.google.gwt.http.client.RequestCallback;
 import com.google.gwt.http.client.RequestException;
 import com.google.gwt.http.client.Response;
+import com.google.gwt.user.client.Window;
+import com.google.gwt.user.client.Window.ClosingEvent;
 import com.google.gwt.xml.client.Document;
 import com.google.gwt.xml.client.Element;
 import com.google.gwt.xml.client.Node;
 import com.google.gwt.xml.client.NodeList;
+import com.google.gwt.xml.client.Text;
 import com.google.gwt.xml.client.XMLParser;
+import com.google.gwt.xml.client.impl.DOMParseException;
 
 
-public class ChatterBoxQueue {
+public class ChatterBoxQueue implements Window.ClosingHandler{
+
+
+  private final class ChannelSocketListener implements SocketListener {
+    
+    @Override
+    public void onOpen() {
+      eventBus.fireEventFromSource(new StatusEvent(StatusLevel.INFO, "channel opened"),ChatterBoxQueue.this);
+    }
+
+    @Override
+    public void onMessage(String message) {
+      handleMessagesReceived(message);
+      eventBus.fireEventFromSource(new StatusEvent(StatusLevel.DEBUG, "Received channel message"),ChatterBoxQueue.this);
+    }
+
+    @Override
+    public void onError(SocketError error) {
+      eventBus.fireEventFromSource(new StatusEvent(StatusLevel.WARNING, "channel opened"),ChatterBoxQueue.this);
+    }
+
+    @Override
+    public void onClose() {
+      eventBus.fireEventFromSource(new StatusEvent(StatusLevel.INFO, "channel closed"),ChatterBoxQueue.this);
+    }
+  }
+
   
   public static final int FIRSTMESSAGE = -2;
   public static final int LASTMESSAGE = -1;
   private static final String MESSAGESBASEURL = "chat/messages";
+  private static final String CONNECTURL = "chat/connect";
   
   private ArrayList<Message> messages;
   private int firstMessage = -1;
   private int lastKnownMessage = -1;
   private boolean working = true;
   private EventBus eventBus;
+  private boolean useChannel;
+  private Socket channelSocket = null;
+  private Channel channel = null;
+  private String channelKey;
   
-  public ChatterBoxQueue (EventBus eventBus) {
+  public ChatterBoxQueue (EventBus eventBus, boolean useChannel) {
     this.eventBus = eventBus;
+    this.setUseChannel(useChannel);
     messages = new ArrayList<Message>();
+    Window.addWindowClosingHandler(this);
   }
   
   public void handleMessagesReceived(Request request, Response response) {
-    Document message = XMLParser.parse(response.getText());
+    String messageText = response.getText();
+    handleMessagesReceived(messageText);
+  }
+
+  public void handleMessagesReceived(String messageText) {
+    Document message;
+    try {
+      message = XMLParser.parse(messageText);
+    } catch (DOMParseException e) {
+      eventBus.fireEventFromSource(new StatusEvent(StatusLevel.WARNING, "Error parsing message \""+messageText+"\"", e), this);
+      return;
+    }
     Element root = getRootElement(message);
     if ("messages".equals(root.getTagName())) {
       Node n = root.getFirstChild();
       while (n!=null) {
         if (n.getNodeType()==Node.ELEMENT_NODE) {
-          Element e = (Element) n;
-          if ("message".equals(e.getTagName())) {
-            String index = e.getAttribute("index");
-            String epoch = e.getAttribute("epoch");
-            NodeList content = e.getChildNodes();
-            if (index!=null) {
-              Message m = new Message(index, epoch, content);
-              addMessage(m);
-            }
-          } else {
-            GWT.log("Unexpected child in messages tag: "+e);
-          }
-          
+          handleReceivedMessage((Element) n);
         }
         n = n.getNextSibling();
-      } 
+      }
+    } else if ("message".equals(root.getTagName())) {
+      handleReceivedMessage(root);
     } else {
-      GWT.log("Unexpected root node for messages tag: "+message);
+      eventBus.fireEventFromSource(new StatusEvent(StatusLevel.WARNING, "Unexpected root node for messages tag: "+message), this);
     }
-    
+  }
+
+  private void handleReceivedMessage(Element e) {
+    if ("message".equals(e.getTagName())) {
+      String index = e.getAttribute("index");
+      String epoch = e.getAttribute("epoch");
+      NodeList content = e.getChildNodes();
+      if (index!=null) {
+        Message m = new Message(index, epoch, content);
+        addMessage(m);
+      }
+    } else {
+      eventBus.fireEventFromSource(new StatusEvent(StatusLevel.WARNING, "Unexpected child in messages tag: "+e), this);
+    }
   }
 
   private void addMessage(Message m) {
-    boolean updateAll = false;
     if (firstMessage<0) {
       updateFirstMessage();
       firstMessage = m.getIndex(); 
@@ -136,13 +192,17 @@ public class ChatterBoxQueue {
     fireUpdateMove(i);
   }
 
+  public void requestMessages() {
+    requestMessages(FIRSTMESSAGE, LASTMESSAGE);
+  }
+  
   /**
    * Initiate requesting a message range. {@link #FIRSTMESSAGE} is a special value for the first message,
    * {@link #LASTMESSAGE} is a special value for the last message.
    * @param start The first message to request.
    * @param end The last message to request.
    */
-  private void requestMessages(int start, int end) {
+  public void requestMessages(int start, int end) {
     StringBuilder requestURL= new StringBuilder();
     requestURL.append(MESSAGESBASEURL);
     char parChar = '?';
@@ -173,12 +233,12 @@ public class ChatterBoxQueue {
         @Override
         public void onError(Request request, Throwable exception) {
           working = false;
-          GWT.log("Requesting messages failed", exception);
+          eventBus.fireEventFromSource(new StatusEvent(StatusLevel.WARNING, "Requesting messages failed", exception), this);
         }
       });
     } catch (RequestException e) {
       working = false;
-      GWT.log("Requesting messages failed", e);
+      eventBus.fireEventFromSource(new StatusEvent(StatusLevel.WARNING, "Requesting messages failed", e), this);
     }
     
   }
@@ -196,6 +256,105 @@ public class ChatterBoxQueue {
       n = n.getNextSibling();
     }
     return (Element) n;
+  }
+
+  public List<Message> getMessages() {
+    return messages;
+  }
+
+  public int size() {
+    return messages.size();
+  }
+
+  public void setUseChannel(boolean useChannel) {
+    if(useChannel ==this.useChannel) {
+      return;
+    }
+    this.useChannel = useChannel;
+    if (useChannel) {
+      connectToChannel();
+    } else {
+      disconnectFromChannel();
+    }
+    
+  }
+
+  private void disconnectFromChannel() {
+    if (channelSocket!=null) {
+      channelSocket.close();
+      channelSocket = null;
+      channel = null;
+      channelKey = null;
+    }
+    
+  }
+
+  private void connectToChannel() {
+    
+    RequestBuilder rb = new RequestBuilder(RequestBuilder.POST, CONNECTURL);
+    try {
+      Request request = rb.sendRequest(null, new RequestCallback() {
+        
+        @Override
+        public void onResponseReceived(Request request, Response response) {
+          handleChannelHandleReceived(request, response);
+        }
+
+        @Override
+        public void onError(Request request, Throwable exception) {
+          useChannel = false;
+          eventBus.fireEventFromSource(new StatusEvent(StatusLevel.WARNING, "Channel connect request failed", exception), this);
+        }
+      });
+    } catch (RequestException e) {
+      working = false;
+      eventBus.fireEventFromSource(new StatusEvent(StatusLevel.WARNING, "Requesting messages failed", e), this);
+    }
+  }
+  
+  private void handleChannelHandleReceived(Request request, Response response) {
+    Document message;
+    try {
+      message = XMLParser.parse(response.getText());
+    } catch (DOMParseException e) {
+      eventBus.fireEventFromSource(new StatusEvent(StatusLevel.WARNING, "Error parsing message \""+response.getText()+"\"", e), this);
+      return;
+    }
+    Element root = getRootElement(message);
+    if ("channel".equals(root.getTagName())) {
+      Node n = root.getFirstChild();
+      while (n!=null) {
+        if (n.getNodeType()==Node.TEXT_NODE) {
+          Text t = (Text) n;
+          String body = t.getData().trim();
+          if (body.length()>0) {
+            channelKey = body;
+            break;
+          }
+        }
+        n = n.getNextSibling();
+      }
+      ChannelFactory.createChannel(channelKey, new ChannelFactory.ChannelCreatedCallback() {
+        
+        @Override
+        public void onChannelCreated(Channel channel) {
+          ChatterBoxQueue.this.channel = channel;
+          ChatterBoxQueue.this.channelSocket = channel.open(new ChannelSocketListener());
+        }
+      });
+    } else {
+      eventBus.fireEventFromSource(new StatusEvent(StatusLevel.WARNING, "Unexpected root node for channel tag: "+message), this);
+    }
+  }
+
+  public boolean isUseChannel() {
+    return useChannel;
+  }
+  
+
+  @Override
+  public void onWindowClosing(ClosingEvent event) {
+    setUseChannel(false);
   }
 
 }

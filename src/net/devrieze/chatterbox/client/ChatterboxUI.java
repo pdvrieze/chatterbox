@@ -5,32 +5,41 @@ import net.devrieze.chatterbox.shared.FieldVerifier;
 import com.google.gwt.appengine.channel.client.Channel;
 import com.google.gwt.appengine.channel.client.ChannelFactory;
 import com.google.gwt.appengine.channel.client.ChannelFactory.ChannelCreatedCallback;
+import com.google.gwt.appengine.channel.client.Socket;
 import com.google.gwt.appengine.channel.client.SocketError;
 import com.google.gwt.appengine.channel.client.SocketListener;
 import com.google.gwt.core.client.GWT;
 import com.google.gwt.dom.client.DivElement;
+import com.google.gwt.dom.client.Node;
 import com.google.gwt.event.dom.client.ClickEvent;
 import com.google.gwt.event.dom.client.KeyCodes;
 import com.google.gwt.event.dom.client.KeyUpEvent;
+import com.google.gwt.event.shared.EventBus;
+import com.google.gwt.event.shared.SimpleEventBus;
+import com.google.gwt.event.shared.GwtEvent.Type;
 import com.google.gwt.resources.client.CssResource;
 import com.google.gwt.uibinder.client.UiBinder;
 import com.google.gwt.uibinder.client.UiField;
 import com.google.gwt.uibinder.client.UiHandler;
 import com.google.gwt.user.client.Timer;
+import com.google.gwt.user.client.Window.ClosingEvent;
 import com.google.gwt.user.client.rpc.AsyncCallback;
 import com.google.gwt.user.client.ui.Button;
 import com.google.gwt.user.client.ui.Composite;
 import com.google.gwt.user.client.ui.Label;
 import com.google.gwt.user.client.ui.TextBox;
 import com.google.gwt.user.client.ui.Widget;
+import com.google.gwt.user.client.Window;
 
 
 /**
  * Entry point classes define <code>onModuleLoad()</code>.
  */
-public class ChatterboxUI extends Composite implements ChannelCreatedCallback {
+public class ChatterboxUI extends Composite implements ChannelCreatedCallback, UpdateMessageEvent.Handler, MoveMessagesEvent.Handler, StatusEvent.Handler {
 
   private String channelToken;
+  
+  private EventBus eventBus = new SimpleEventBus();
   
   private final class ConnectCallback implements AsyncCallback<String> {
 
@@ -63,7 +72,8 @@ public class ChatterboxUI extends Composite implements ChannelCreatedCallback {
 
     @Override
     public void onMessage(String message) {
-      addOutput(message);
+      messageQueue.handleMessagesReceived(message);
+//      addOutput(message);
       errorLabel.setText("Received channel message");
     }
 
@@ -105,6 +115,10 @@ public class ChatterboxUI extends Composite implements ChannelCreatedCallback {
   @UiField DivElement outputdiv;
   Channel channel = null;
 
+  private ChatterBoxQueue messageQueue;
+
+  private Socket channelSocket;
+
   public ChatterboxUI() {
     initWidget(uiBinder.createAndBindUi(this));
     
@@ -112,10 +126,16 @@ public class ChatterboxUI extends Composite implements ChannelCreatedCallback {
 
     // We can add style names to widgets
     sendButton.addStyleName("sendButton");
-
+    
+    eventBus.addHandler(UpdateMessageEvent.TYPE, this);
+    eventBus.addHandler(StatusEvent.TYPE, this);
+    
+    messageQueue = new ChatterBoxQueue(eventBus, true);
+    messageQueue.requestMessages();
+    
     // Focus the cursor on the name field when the app loads
     
-    greetingService.greetServer("<connect></connect>", new ConnectCallback());
+    //greetingService.greetServer("<connect></connect>", new ConnectCallback());
   }
 
   private void createChannel(String key) {
@@ -125,7 +145,7 @@ public class ChatterboxUI extends Composite implements ChannelCreatedCallback {
   @Override
   public void onChannelCreated(Channel ch) {
     channel = ch;
-    channel.open(new ChannelSocketListener());
+    channelSocket = channel.open(new ChannelSocketListener());
   }
 
   @UiHandler("textBox")
@@ -161,6 +181,7 @@ public class ChatterboxUI extends Composite implements ChannelCreatedCallback {
       }
 
       public void onSuccess(String result) {
+        messageQueue.handleMessagesReceived(result);
 //        addOutput(result);
 //        errorLabel.setText("RPC successful");
         textBox.setText("");
@@ -177,6 +198,69 @@ public class ChatterboxUI extends Composite implements ChannelCreatedCallback {
       d.addClassName(style.even()); 
     }
     outputdiv.appendChild(d);
+  }
+
+  @Override
+  public void onMoveMessages(MoveMessagesEvent event) {
+    // TODO do this better;
+    StringBuilder innerHtml = new StringBuilder();
+    int i = 0;
+    for(Message m: messageQueue.getMessages()) {
+      String mHtml = createMessageHtml(i, m);
+      if (mHtml!=null && mHtml.length()>0) {
+        i++;
+        innerHtml.append(mHtml);
+      }
+
+    }
+    
+    outputdiv.setInnerHTML(innerHtml.toString());
+  }
+
+  @Override
+  public void onUpdateMessage(UpdateMessageEvent event) {
+    // TODO do this much better
+    
+    // Special case message added
+    if (event.getMessageIndex()==messageQueue.size()-1) {
+      Message m = messageQueue.getMessages().get(event.getMessageIndex());
+      DivElement d = outputdiv.getOwnerDocument().createDivElement();
+      d.setInnerHTML(createMessageHtml(outputdiv.getChildCount(), m));
+      for(Node n = d.getFirstChild(); n!=null; n=n.getNextSibling()) {
+        outputdiv.appendChild(n);
+      }
+    } else {
+      // Pretend we can't be smart and just replace the whole list
+      onMoveMessages(null);
+    }
+  }
+
+  /**
+   * Create the right HTML text to put a message in the output div
+   * @param i position in the list
+   * @param m message
+   * @return the html text
+   */
+  private String createMessageHtml(int i, Message m) {
+    StringBuilder mHtml = new StringBuilder(); 
+    if (m!=null) {
+      if (i%2==1) {
+        mHtml.append("<div class=\"even\">");
+      } else {
+        mHtml.append("<div class=\"odd\">");
+      }
+      mHtml.append(m.getContent().toString());
+      mHtml.append("</div>");
+ 
+    }
+    return mHtml.toString();
+  }
+
+  @Override
+  public void onStatusUpdate(StatusEvent e) {
+    String messageText = e.getStatusLevel()+": "+e.getMessage();
+    errorLabel.setText(messageText);
+    GWT.log(messageText, e.getException());
   }
 
 }
