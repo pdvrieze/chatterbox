@@ -40,10 +40,12 @@ public class ChannelManager {
     return "<token>" + token + "</token>";
   }
 
-  Message sendMessageToChannels(String message) {
+  Message sendMessageToChannels(String messageBody) {
     TokenList tokens;
     PersistenceManager pm = ChatterboxServlet.getPMF().getPersistenceManager();
     try {
+      Box box = getDefaultBox(pm);
+      Message message = box.addMessage(messageBody);
       tokens = getTokenList(pm);
       if (tokens !=null) {
         Iterator<String> it= tokens.iterator();
@@ -51,15 +53,14 @@ public class ChannelManager {
           String clientid = it.next();
           try {
             System.out.println("Sending message to: \""+clientid+"\"");
-            channelService.sendMessage(new ChannelMessage(clientid, message));
+            channelService.sendMessage(new ChannelMessage(clientid, "<messages>"+message.toXML()+"</messages>"));
           } catch (ChannelFailureException e) {
             System.out.println("Invalidating channel: "+clientid);
             it.remove();
           }
         }
       }
-      Box box = getDefaultBox(pm);
-      return box.addMessage(message);
+      return message;
     } finally {
       pm.close();
     }
