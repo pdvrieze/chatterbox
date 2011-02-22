@@ -3,7 +3,6 @@ package net.devrieze.chatterbox.server;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
 
-import javax.jdo.annotations.NotPersistent;
 import javax.jdo.annotations.PersistenceCapable;
 import javax.jdo.annotations.Persistent;
 import javax.jdo.annotations.PrimaryKey;
@@ -14,6 +13,7 @@ import com.google.appengine.api.datastore.KeyFactory;
 @PersistenceCapable
 public class Message {
   
+  @SuppressWarnings("unused")
   @Persistent
   @PrimaryKey
   private Key key;

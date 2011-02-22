@@ -1,12 +1,9 @@
 package net.devrieze.chatterbox.server;
 
 
-import javax.jdo.PersistenceManagerFactory;
-
 import net.devrieze.chatterbox.client.GreetingService;
 import net.devrieze.chatterbox.shared.FieldVerifier;
 
-import com.google.appengine.api.channel.ChannelServiceFactory;
 import com.google.gwt.user.server.rpc.RemoteServiceServlet;
 
 
@@ -15,8 +12,6 @@ import com.google.gwt.user.server.rpc.RemoteServiceServlet;
  */
 @SuppressWarnings("serial")
 public class GreetingServiceImpl extends RemoteServiceServlet implements GreetingService {
-
-  private int seqNo = 0;
 
   private ChannelManager channelManager = new ChannelManager();
 
@@ -35,19 +30,5 @@ public class GreetingServiceImpl extends RemoteServiceServlet implements Greetin
     Message message = channelManager.sendMessageToChannels(input);
 
     return "<messages>"+message.toXML()+"</messages>";
-  }
-
-  /**
-   * Escape an html string. Escaping data received from the client helps to
-   * prevent cross-site script vulnerabilities.
-   * 
-   * @param html the html string to escape
-   * @return the escaped string
-   */
-  private String escapeHtml(String html) {
-    if (html == null) {
-      return null;
-    }
-    return html.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
   }
 }

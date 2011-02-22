@@ -16,6 +16,7 @@ public class TokenList {
   @NotPersistent
   public static final String DEFAULTKEY = "defaultChatChannel";
 
+  @SuppressWarnings("unused")
   @PrimaryKey
   @Persistent
   private String key = DEFAULTKEY;

@@ -1,13 +1,10 @@
 package net.devrieze.chatterbox.client;
 
-import net.devrieze.chatterbox.client.StatusEvent.StatusLevel;
-
 import com.google.gwt.event.shared.EventHandler;
 import com.google.gwt.event.shared.GwtEvent;
 
 
 public class StatusEvent extends GwtEvent<StatusEvent.Handler> {
-  
   
   public enum StatusLevel {
     WARNING,
