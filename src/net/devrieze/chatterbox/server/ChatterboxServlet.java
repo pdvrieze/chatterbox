@@ -248,22 +248,6 @@ public class ChatterboxServlet extends HttpServlet {
         return t;
       }
     }
-    
-    if (myPath.endsWith("/")) {
-      myPath = myPath.substring(0, myPath.length()-1);
-    }
-    if ("/connect".equals(myPath)) {
-      return Target.CONNECT;
-    }
-    if ("/clear".equals(myPath)) {
-      return Target.CONNECT;
-    }
-    if ("/messages".equals(myPath)) {
-      return Target.MESSAGES;
-    }
-    if (myPath.startsWith("/boxes/") && myPath.length()>7) {
-      return Target.BOXES;
-    }
     return null;
   }
   
