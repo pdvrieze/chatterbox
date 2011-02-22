@@ -3,11 +3,6 @@ package net.devrieze.chatterbox.client;
 import net.devrieze.chatterbox.shared.FieldVerifier;
 
 import com.google.gwt.appengine.channel.client.Channel;
-import com.google.gwt.appengine.channel.client.ChannelFactory;
-import com.google.gwt.appengine.channel.client.ChannelFactory.ChannelCreatedCallback;
-import com.google.gwt.appengine.channel.client.Socket;
-import com.google.gwt.appengine.channel.client.SocketError;
-import com.google.gwt.appengine.channel.client.SocketListener;
 import com.google.gwt.core.client.GWT;
 import com.google.gwt.dom.client.DivElement;
 import com.google.gwt.dom.client.Node;
@@ -16,78 +11,24 @@ import com.google.gwt.event.dom.client.KeyCodes;
 import com.google.gwt.event.dom.client.KeyUpEvent;
 import com.google.gwt.event.shared.EventBus;
 import com.google.gwt.event.shared.SimpleEventBus;
-import com.google.gwt.event.shared.GwtEvent.Type;
 import com.google.gwt.resources.client.CssResource;
 import com.google.gwt.uibinder.client.UiBinder;
 import com.google.gwt.uibinder.client.UiField;
 import com.google.gwt.uibinder.client.UiHandler;
-import com.google.gwt.user.client.Timer;
-import com.google.gwt.user.client.Window.ClosingEvent;
 import com.google.gwt.user.client.rpc.AsyncCallback;
 import com.google.gwt.user.client.ui.Button;
 import com.google.gwt.user.client.ui.Composite;
 import com.google.gwt.user.client.ui.Label;
 import com.google.gwt.user.client.ui.TextBox;
 import com.google.gwt.user.client.ui.Widget;
-import com.google.gwt.user.client.Window;
 
 
 /**
  * Entry point classes define <code>onModuleLoad()</code>.
  */
-public class ChatterboxUI extends Composite implements ChannelCreatedCallback, UpdateMessageEvent.Handler, MoveMessagesEvent.Handler, StatusEvent.Handler {
-
-  private String channelToken;
+public class ChatterboxUI extends Composite implements UpdateMessageEvent.Handler, MoveMessagesEvent.Handler, StatusEvent.Handler {
   
   private EventBus eventBus = new SimpleEventBus();
-  
-  private final class ConnectCallback implements AsyncCallback<String> {
-
-    public void onFailure(Throwable caught) {
-      errorLabel.setText("Connect failed, retrying in 3 seconds");
-      new Timer() {
-        
-        @Override
-        public void run() {
-          greetingService.greetServer("<connect></connect>", ConnectCallback.this);
-          
-        }
-      }.schedule(3000);
-    }
-
-    public void onSuccess(String result) {
-      channelToken = result.replace("<token>", "").replace("</token>", "");
-      errorLabel.setText("Connect to server succeeded, creating channel... ("+channelToken+")");
-      createChannel(channelToken);
-    }
-  }
-
-  private final class ChannelSocketListener implements SocketListener {
-
-    @Override
-    public void onOpen() {
-      errorLabel.setText("channel opened");
-      // ignore
-    }
-
-    @Override
-    public void onMessage(String message) {
-      messageQueue.handleMessagesReceived(message);
-//      addOutput(message);
-      errorLabel.setText("Received channel message");
-    }
-
-    @Override
-    public void onError(SocketError error) {
-      errorLabel.setText("Failure to open channel ("+error.getCode()+"):"+error.getDescription());
-    }
-
-    @Override
-    public void onClose() {
-      addOutput("<div style='background-color:red'>channel closed</div>");
-      textBox.setEnabled(false);
-    }
-  }
 
   interface ChatterboxBinder extends UiBinder<Widget, ChatterboxUI> {}
   private static ChatterboxBinder uiBinder = GWT.create(ChatterboxBinder.class);
@@ -96,13 +37,6 @@ public class ChatterboxUI extends Composite implements ChannelCreatedCallback, U
     String even();
   }
   @UiField MyStyle style;
-
-  /**
-   * The message displayed to the user when the server cannot be reached or
-   * returns an error.
-   */
-  private static final String SERVER_ERROR = "An error occurred while attempting to contact the server. Please check your network "
-      + "connection and try again.";
 
   /**
    * Create a remote service proxy to talk to the server-side Greeting service.
@@ -116,8 +50,6 @@ public class ChatterboxUI extends Composite implements ChannelCreatedCallback, U
   Channel channel = null;
 
   private ChatterBoxQueue messageQueue;
-
-  private Socket channelSocket;
 
   public ChatterboxUI() {
     initWidget(uiBinder.createAndBindUi(this));
@@ -136,16 +68,6 @@ public class ChatterboxUI extends Composite implements ChannelCreatedCallback, U
     // Focus the cursor on the name field when the app loads
     
     //greetingService.greetServer("<connect></connect>", new ConnectCallback());
-  }
-
-  private void createChannel(String key) {
-    ChannelFactory.createChannel(key, this);
-  }
-  
-  @Override
-  public void onChannelCreated(Channel ch) {
-    channel = ch;
-    channelSocket = channel.open(new ChannelSocketListener());
   }
 
   @UiHandler("textBox")
@@ -182,22 +104,10 @@ public class ChatterboxUI extends Composite implements ChannelCreatedCallback, U
 
       public void onSuccess(String result) {
         messageQueue.handleMessagesReceived(result);
-//        addOutput(result);
-//        errorLabel.setText("RPC successful");
         textBox.setText("");
         textBox.setFocus(true);
       }
     });
-  }
-
-  private void addOutput(String text) {
-    DivElement d = outputdiv.getOwnerDocument().createDivElement();
-    d.setInnerHTML(text);
-    boolean even = outputdiv.getChildCount()% 2 == 1;
-    if (even) {
-      d.addClassName(style.even()); 
-    }
-    outputdiv.appendChild(d);
   }
 
   @Override
