@@ -1,5 +1,6 @@
 package net.devrieze.chatterbox.client;
 
+import net.devrieze.chatterbox.client.StatusEvent.StatusLevel;
 import net.devrieze.chatterbox.shared.FieldVerifier;
 
 import com.google.gwt.appengine.channel.client.Channel;
@@ -15,7 +16,6 @@ import com.google.gwt.resources.client.CssResource;
 import com.google.gwt.uibinder.client.UiBinder;
 import com.google.gwt.uibinder.client.UiField;
 import com.google.gwt.uibinder.client.UiHandler;
-import com.google.gwt.user.client.rpc.AsyncCallback;
 import com.google.gwt.user.client.ui.Button;
 import com.google.gwt.user.client.ui.Composite;
 import com.google.gwt.user.client.ui.Label;
@@ -36,12 +36,8 @@ public class ChatterboxUI extends Composite implements UpdateMessageEvent.Handle
   interface MyStyle extends CssResource {
     String even();
   }
-  @UiField MyStyle style;
 
-  /**
-   * Create a remote service proxy to talk to the server-side Greeting service.
-   */
-  private final GreetingServiceAsync greetingService = GWT.create(GreetingService.class);
+  @UiField MyStyle style;
 
   @UiField Button sendButton;
   @UiField Label errorLabel;
@@ -64,10 +60,6 @@ public class ChatterboxUI extends Composite implements UpdateMessageEvent.Handle
     
     messageQueue = new ChatterBoxQueue(eventBus, true);
     messageQueue.requestMessages();
-    
-    // Focus the cursor on the name field when the app loads
-    
-    //greetingService.greetServer("<connect></connect>", new ConnectCallback());
   }
 
   @UiHandler("textBox")
@@ -91,23 +83,9 @@ public class ChatterboxUI extends Composite implements UpdateMessageEvent.Handle
       errorLabel.setText("Please enter at least four characters");
       return;
     }
-
-    // Then, we send the input to the server.
-    sendButton.setEnabled(false);
-    greetingService.greetServer(textToServer, new AsyncCallback<String>() {
-
-      public void onFailure(Throwable caught) {
-        errorLabel.setText("Remote Procedure Call - Failure");
-        textBox.setText("");
-        textBox.setFocus(true);
-      }
-
-      public void onSuccess(String result) {
-        messageQueue.handleMessagesReceived(result);
-        textBox.setText("");
-        textBox.setFocus(true);
-      }
-    });
+    messageQueue.sendMessage(textToServer);
+    textBox.setText("");
+    textBox.setFocus(true);
   }
 
   @Override
@@ -169,7 +147,9 @@ public class ChatterboxUI extends Composite implements UpdateMessageEvent.Handle
   @Override
   public void onStatusUpdate(StatusEvent e) {
     String messageText = e.getStatusLevel()+": "+e.getMessage();
-    errorLabel.setText(messageText);
+    if (e.getStatusLevel()==StatusLevel.WARNING) {
+      errorLabel.setText(messageText);
+    }
     GWT.log(messageText, e.getException());
   }
 
