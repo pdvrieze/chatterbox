@@ -1,20 +1,61 @@
 <ui:UiBinder xmlns:ui='urn:ui:com.google.gwt.uibinder' xmlns:g='urn:import:com.google.gwt.user.client.ui'>
   <ui:style type='net.devrieze.chatterbox.client.ChatterboxUI.MyStyle'>
-    .errorLabel {
-    	 text-align: center;
-    	 margin-top: 0.1em;
+
+    /* Top of the page */      
+    
+    #header {
+    	position: fixed;
+    	top: 0em;
+    	left: 0em;
+    	right: 0em;
+      height: 3em;
+      text-align: center;
+      background-color: white;
+      margin-left: 1ex;
+      margin-right: 1ex;
+      border-bottom: 1px solid black;
     }
+    .title {
+      background-color: #c0c0ff;
+    }
+    
+    #headborder {
+      border: 1px solid black;
+      border-top: none;
+   	}
+    
+    #headerborder > div {
+      padding-top:0.25em;
+      padding-bottom:0.25em;
+    }
+    .errorLabel {
+    	 text-color: #404040;
+    	 height: 1.5em;
+    }
+    
+    /* Middle of the page */
+    
+    #main {
+    	margin-top: 3em;
+/*    	padding-top: 3em;*/
+    	margin-bottom: 3em;
+    }
+    #backgroundPanel {
+    	position: fixed;
+    	top: 2.5em;
+    	left: 1ex;
+    	right: 1ex;
+    	bottom: 3em;
+      border: 1px solid black;
+      background-color: #ffffe0;
+      z-index: -1;
+   	}
+    
     .outputBox {
-    	overflow: auto;
-    	border: 1px solid black;
     	margin: 1ex;
-    	background-color: #ffffc0;
-    	position: absolute;
-    	bottom: 0px;
-    	top:0px;
-    	left:0px;
-    	right:0px;
     	padding-top: 0.5ex;
+    	padding-left: 1px;
+    	padding-right: 1px;
     }
     .outputBox > div {
     	border-bottom: 1px dotted gray;
@@ -29,18 +70,67 @@
     .outputBox > div.even {
     	background-color: #c0c0ff;
     }
-    .inputBox {
-      border: 1px solid black;
-      margin-left: 1ex;
-      margin-right: 1ex;
-      margin-bottom: 1ex;
-   	}
-   	@external sendButton;
-   	.sendButton {
-   		margin-left: 1ex;
+
+    /* Bottom of the page */      
+   	
+   	#footer {
+   		position: fixed;
+   		bottom: 0em;
+      right: 1ex;
+      left: 1ex;
+      height: 3em;
+   		background-color: white;
+   		border-top: 1px solid black;
+  	}
+  	#footer > div {
+  		margin-top: 0.25em;
+  		border: 1px solid black;
+      padding-right: 7em;
+ 		}
+    
+    .myTextBox {
+    	width: 100%;
+    	height: 2em;
+    	padding: 0px;
+/*      border: 1px solid black;*/
     }
+    @external sendButton;
+    #footer > div > .sendButton {
+      float: right;
+      padding: 0em;
+      width: 0px;
+    }
+    .sendButton > .sendButton {
+      width: 6.5em;
+      height: 2em;
+      margin-top: 0.2em;
+      margin-left: 0.25em;
+    }
+    #footer > div > div {
+    	padding-right: 0.25em;
+    }
+    
   </ui:style>
-  <g:RootLayoutPanel>
+  <g:HTMLPanel>
+    <div id="main">
+       <div id="backgroundPanel"></div>
+       <div class="{style.outputBox}" ui:field='outputdiv'></div>
+    </div>
+     <div id="header">
+       <div id="headborder">
+         <div class="{style.title}">ChatterBox</div>
+         <div id="errorLabelContainer"><g:Label ui:field='errorLabel' addStyleNames="{style.errorLabel}"></g:Label></div>
+       </div>
+     </div>
+    <div id="footer">
+      <div>
+        <div class="{style.sendButton}"><g:Button addStyleNames="{style.sendButton}" text="send" ui:field='sendButton'></g:Button></div>
+	      <div><g:TextBox addStyleNames="{style.myTextBox}" ui:field='textBox' focus="true">initial text</g:TextBox></div>
+      </div>
+    </div>
+  </g:HTMLPanel>
+  
+  <!-- g:RootLayoutPanel>
     <g:layer>
 		  <g:DockLayoutPanel unit="EM">
 		    <g:north size="1.25">
@@ -59,5 +149,5 @@
 		    </g:south>
 		  </g:DockLayoutPanel>
     </g:layer>
-  </g:RootLayoutPanel>
+  </g:RootLayoutPanel-->
 </ui:UiBinder>
