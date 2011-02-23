@@ -35,34 +35,24 @@ public class AuthFilter implements Filter {
   }
   
   public void doFilter(HttpServletRequest req, HttpServletResponse resp, FilterChain filterChain) throws IOException, ServletException {
-
-    /*if ("127.0.0.1".equals(req.getRemoteAddr())) {
-      filterChain.doFilter(req, resp);
-    }*/
+//    System.err.println("dofilter called for "+req.getRequestURI());
     UserService userService = UserServiceFactory.getUserService();
-    if (userService.createLoginURL(req.getRequestURI()).startsWith(req.getRequestURI())) {
+    if (req.getRequestURI().startsWith(loginBaseURL(userService)) || req.getRequestURI().startsWith(logoutBaseURL(userService))) {
       filterChain.doFilter(req, resp);
       return;
     }
     Principal principal = req.getUserPrincipal();
     if (principal!=null) {
       if (isAllowed(principal)) {
-        if (req.getPathInfo().startsWith("/chat/clear")) {
-          if (isAdmin(principal)) {
-            filterChain.doFilter(req, resp);
-            return;
-          }
-        } else {
-          filterChain.doFilter(req, resp);
-          return;
-        }
+        filterChain.doFilter(req, resp);
+        return;
       } else {
         String extramsg=""; 
         if ("POST".equals(req.getMethod())){
           String token = req.getParameter("key");
           if (SECRET.equals(token)) {
             addAllowedPrincipal(principal);
-            resp.encodeRedirectURL(req.getRequestURI());
+            resp.sendRedirect(resp.encodeRedirectURL(req.getRequestURI()));
             return;
           } else {
             extramsg="The token is not right, you will not be authorized to use this app.";
@@ -74,20 +64,46 @@ public class AuthFilter implements Filter {
         out.print(extramsg);
         out.print("</div><div><form method='POST' action='"+req.getRequestURI()+"'>");
         out.println("Please provide your access token</div><div><input type='text' name='key' /><button type='submit'>Submit</button></form></div>");
-        out.println("</div>");
+        out.println("<div style='margin-top: 1em;'>You are logged in as "+principal.toString()+" <a href=\""+userService.createLogoutURL(req.getRequestURI())+"\">logout</a></div></div>");
         out.println("</body></html>");
         resp.setStatus(HttpServletResponse.SC_OK);
+        return;
       }
     } else {
+      //resp.sendRedirect(userService.createLoginURL(req.getRequestURI()));
       PrintWriter out = resp.getWriter();
       out.println("<html><head><title>Please login</title></head><body>");
       out.print("<div style='margin:5em; border: 1px solid black; padding: 2em;'><div style='margin-bottom:2em;'>");
-      out.print("Please <a href=\""+userService.createLoginURL(req.getRequestURI())+"\">login</a></div>");
+      out.print("Please <a href=\"");
+      if (req.getRequestURI().endsWith("logout")) {
+        out.print(userService.createLoginURL("/"));
+      } else {
+        out.print(userService.createLoginURL(req.getRequestURI()));
+      }
+      out.print("\">login</a></div>");
       out.println("</body></html>");
       
       resp.setStatus(HttpServletResponse.SC_OK);
+      return;
     }
-    resp.setStatus(HttpServletResponse.SC_FORBIDDEN);
+  }
+
+  private String loginBaseURL(UserService userService) {
+    String s = userService.createLoginURL("");
+    int i = s.indexOf('?');
+    if (i>=0) {
+      return s.substring(0,i);
+    }
+    return s;
+  }
+
+  private String logoutBaseURL(UserService userService) {
+    String s = userService.createLogoutURL("");
+    int i = s.indexOf('?');
+    if (i>=0) {
+      return s.substring(0,i);
+    }
+    return s;
   }
 
   private void addAllowedPrincipal(Principal principal) {
