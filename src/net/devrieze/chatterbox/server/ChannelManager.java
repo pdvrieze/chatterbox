@@ -33,7 +33,7 @@ public class ChannelManager {
       clientid=tokens.getClientId();;
       token = channelService.createChannel(clientid);
       tokens.add(clientid);
-      System.out.println("Channel token: \""+token+"\" key:\""+clientid+"\"");
+//      System.out.println("Channel token: \""+token+"\" key:\""+clientid+"\"");
     } finally {
       pm.close();
     }
@@ -52,10 +52,10 @@ public class ChannelManager {
         while (it.hasNext()) {
           String clientid = it.next();
           try {
-            System.out.println("Sending message to: \""+clientid+"\"");
+//            System.out.println("Sending message to: \""+clientid+"\"");
             channelService.sendMessage(new ChannelMessage(clientid, "<messages>"+message.toXML()+"</messages>"));
           } catch (ChannelFailureException e) {
-            System.out.println("Invalidating channel: "+clientid);
+//            System.out.println("Invalidating channel: "+clientid);
             it.remove();
           }
         }
