@@ -20,8 +20,6 @@ public class ChatterboxServlet extends HttpServlet {
 
   private static final long serialVersionUID = 3717262307787043062L;
   
-  private static final String SECRET = "mad2011";
-
   private static final String[] ALLOWEDTAGNAMES = { "b", "i", "p", "div", "span", "code"};
 
   private static PersistenceManagerFactory _pmf = null;
