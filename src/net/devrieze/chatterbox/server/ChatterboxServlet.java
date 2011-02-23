@@ -1,6 +1,7 @@
 package net.devrieze.chatterbox.server;
 
 import java.io.BufferedReader;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.PrintWriter;
 
@@ -13,7 +14,7 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.apache.http.HttpStatus;
+import com.google.appengine.api.users.UserServiceFactory;
 
 
 public class ChatterboxServlet extends HttpServlet {
@@ -45,6 +46,15 @@ public class ChatterboxServlet extends HttpServlet {
   }
   
   private static enum Target {
+    LOGOUT("/logout") {
+      public boolean handle(ChatterboxServlet servlet, Method method, HttpServletRequest req, HttpServletResponse resp) throws IOException {
+        if (method == Method.GET) {
+          return servlet.handleLogout(req, resp);
+        }
+        return false;
+      }
+    },
+    
     CONNECT("/connect") {
       public boolean handle(ChatterboxServlet servlet, Method method, HttpServletRequest req, HttpServletResponse resp) throws IOException {
         if (method == Method.POST) {
@@ -61,6 +71,8 @@ public class ChatterboxServlet extends HttpServlet {
             return servlet.handleMessages(req, resp);
           case POST:
             return servlet.handleMessage(req, resp);
+          case DELETE:
+            return servlet.handleClear(req, resp);
         }
         return false;
       }
@@ -74,15 +86,21 @@ public class ChatterboxServlet extends HttpServlet {
         return false;
       }
     },
-    
-    CLEAR("/clear"){
+    DEFAULT("/"){
+      
+      public boolean isTargetted(String target) {
+        return target.endsWith(".html")|| "/".equals(target);
+      }
+
+      @Override
       public boolean handle(ChatterboxServlet servlet, Method method, HttpServletRequest req, HttpServletResponse resp) throws IOException {
-        if (method == Method.POST || method == Method.GET) {
-          return servlet.handleClear(req, resp);
+        if (method == Method.GET) {
+          return servlet.handleFile(req, resp);
         }
         return false;
       }
-    },
+      
+    }
     ;
     
     private String prefix;
@@ -144,9 +162,9 @@ public class ChatterboxServlet extends HttpServlet {
     int contentLength = req.getContentLength();
     if (contentLength > 10240) {
       resp.setContentType("text/html");
-      System.out.println("<html><head><title>Error, too long</title></head><body><p>Message of length "+
+      resp.getWriter().println("<html><head><title>Error, too long</title></head><body><p>Message of length "+
           contentLength+" is longer than 10 kilobytes.</p></body></html>");
-      resp.setStatus(HttpStatus.SC_REQUEST_TOO_LONG);
+      resp.setStatus(414);
       return true;
     }
     resp.setContentType("text/xml");
@@ -164,7 +182,36 @@ public class ChatterboxServlet extends HttpServlet {
     }
     Message m = channelManager.sendMessageToChannels(sanitizeMessage(message.toString()));
     resp.getWriter().append(m.toXML());
-    resp.setStatus(HttpStatus.SC_OK);
+    resp.setStatus(HttpServletResponse.SC_OK);
+    return true;
+  }
+
+  protected boolean handleLogout(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+    resp.sendRedirect(UserServiceFactory.getUserService().createLogoutURL("/"));
+    return true;
+  }
+
+  private boolean handleFile(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+//    System.err.println("handlefile called for path "+req.getPathTranslated());
+    String path = req.getPathTranslated();
+    if (path==null) { path = req.getRequestURI(); } 
+    else if (! path.startsWith("/")) {
+      return false;
+    }
+    path = path.substring(1);
+    if (path.length()==0) { path = "Chatterbox.html"; }
+    if (path.contains("..")) { return false; }
+    
+    FileReader in = new FileReader(path);
+    char[] buffer = new char[10000];
+    StringBuilder result = new StringBuilder(); 
+    int c = in.read(buffer);
+    while (c>=0) {
+      result.append(buffer,0,c);
+      c = in.read(buffer);
+    }
+    resp.getWriter().append(result);
+    resp.setStatus(HttpServletResponse.SC_OK);
     return true;
   }
 
@@ -293,7 +340,7 @@ public class ChatterboxServlet extends HttpServlet {
       pm.close();
       out.println("</messages>");
     }
-    resp.setStatus(HttpStatus.SC_OK);
+    resp.setStatus(HttpServletResponse.SC_OK);
     
     return true;
   }
@@ -305,11 +352,15 @@ public class ChatterboxServlet extends HttpServlet {
     out.println("<boxes>");
     out.println("  <box default=\"true\">main</box>");
     out.println("</boxes>");
-    resp.setStatus(HttpStatus.SC_OK);
+    resp.setStatus(HttpServletResponse.SC_OK);
     return true;
   }
 
   private boolean handleClear(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+    if (! UserServiceFactory.getUserService().isUserAdmin()) {
+      resp.setStatus(HttpServletResponse.SC_FORBIDDEN);
+      return true;
+    }
     PersistenceManager pm = getPMF().getPersistenceManager();
     try {
       Box b = getDefaultBox(pm);
@@ -322,7 +373,7 @@ public class ChatterboxServlet extends HttpServlet {
     out.println("<?xml version=\"1.0\"?>");
     out.println("<messages>");
     out.println("</messages>");
-    resp.setStatus(HttpStatus.SC_OK);
+    resp.setStatus(HttpServletResponse.SC_OK);
     return true;
   }
 
@@ -330,14 +381,14 @@ public class ChatterboxServlet extends HttpServlet {
     String response = channelManager.createChannel();
     resp.getWriter().append(response);
     resp.setContentType("text/xml");
-    resp.setStatus(HttpStatus.SC_OK);
+    resp.setStatus(HttpServletResponse.SC_OK);
     return true;
   }
 
   private Target getTarget(HttpServletRequest req) {
     String myPath = req.getPathInfo();
     if (myPath==null) {
-      return null;
+      myPath=req.getRequestURI();
     }
     for (Target t:Target.values()) {
       if(t.isTargetted(myPath)) {
