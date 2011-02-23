@@ -6,6 +6,7 @@ import net.devrieze.chatterbox.shared.FieldVerifier;
 import com.google.gwt.appengine.channel.client.Channel;
 import com.google.gwt.core.client.GWT;
 import com.google.gwt.dom.client.DivElement;
+import com.google.gwt.dom.client.Document;
 import com.google.gwt.dom.client.Node;
 import com.google.gwt.event.dom.client.ClickEvent;
 import com.google.gwt.event.dom.client.KeyCodes;
@@ -16,6 +17,7 @@ import com.google.gwt.resources.client.CssResource;
 import com.google.gwt.uibinder.client.UiBinder;
 import com.google.gwt.uibinder.client.UiField;
 import com.google.gwt.uibinder.client.UiHandler;
+import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.ui.Button;
 import com.google.gwt.user.client.ui.Composite;
 import com.google.gwt.user.client.ui.Label;
@@ -121,6 +123,13 @@ public class ChatterboxUI extends Composite implements UpdateMessageEvent.Handle
       // Pretend we can't be smart and just replace the whole list
       onMoveMessages(null);
     }
+    scrollDown();
+  }
+
+  private void scrollDown() {
+    Document document = Document.get();
+    int height = document.getScrollHeight();
+    Window.scrollTo(0, height);
   }
 
   /**
