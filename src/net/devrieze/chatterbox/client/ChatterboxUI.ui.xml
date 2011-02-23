@@ -118,7 +118,7 @@
     </div>
      <div id="header">
        <div id="headborder">
-         <div class="{style.title}">ChatterBox</div>
+         <div class="{style.title}">ChatterBox (<a ui:field='logoutRef' href="/chat/logout">logout</a>)</div>
          <div id="errorLabelContainer"><g:Label ui:field='errorLabel' addStyleNames="{style.errorLabel}"></g:Label></div>
        </div>
      </div>
