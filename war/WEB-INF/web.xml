@@ -6,19 +6,23 @@
 <web-app>
   
   <!-- Servlets -->
-  <servlet>
+  <!-- servlet>
     <servlet-name>greetServlet</servlet-name>
     <servlet-class>net.devrieze.chatterbox.server.GreetingServiceImpl</servlet-class>
-  </servlet>
+  </servlet-->
   <servlet>
     <servlet-name>chatServlet</servlet-name>
     <servlet-class>net.devrieze.chatterbox.server.ChatterboxServlet</servlet-class>
   </servlet>
+  <filter>
+    <filter-name>myauth</filter-name>
+    <filter-class>net.devrieze.chatterbox.server.AuthFilter</filter-class>
+  </filter>
   
-  <servlet-mapping>
+  <!-- servlet-mapping>
     <servlet-name>greetServlet</servlet-name>
     <url-pattern>/chatterbox/greet</url-pattern>
-  </servlet-mapping>
+  </servlet-mapping-->
   
   <servlet-mapping>
     <servlet-name>chatServlet</servlet-name>
@@ -30,9 +34,34 @@
     <url-pattern>/chat/*</url-pattern>
   </servlet-mapping>
   
+  <servlet-mapping>
+    <servlet-name>chatServlet</servlet-name>
+    <url-pattern>/Chatterbox.html</url-pattern>
+  </servlet-mapping>
+  
   <!-- Default page to serve -->
   <welcome-file-list>
     <welcome-file>Chatterbox.html</welcome-file>
   </welcome-file-list>
+  
+  <filter-mapping>
+    <filter-name>myauth</filter-name>
+    <url-pattern>/Chatterbox.html</url-pattern>
+  </filter-mapping>
+  
+  <filter-mapping>
+    <filter-name>myauth</filter-name>
+    <url-pattern>/</url-pattern>
+  </filter-mapping>
+  
+  <filter-mapping>
+    <filter-name>myauth</filter-name>
+    <url-pattern>/chat/*</url-pattern>
+  </filter-mapping>
+  
+  <filter-mapping>
+    <filter-name>myauth</filter-name>
+    <url-pattern>/chat</url-pattern>
+  </filter-mapping>
 
 </web-app>
