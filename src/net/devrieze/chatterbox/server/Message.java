@@ -49,10 +49,11 @@ public class Message {
 
   public CharSequence toXML() {
     // Capacity estimated to 40 characters plus message length
-    return new StringBuilder(40+message.length()).append("<message index=\"").append(getIndex()).append("\" epoch=\"")
-          .append(msgTime).append("\" from=\"")
-          .append(Util.encodeHtml(source)).append("\">")
-          .append(message).append("</message>");
+    StringBuilder result = new StringBuilder(40+message.length()).append("<message index=\"").append(getIndex());
+    result.append("\" epoch=\"").append(msgTime);
+    if (source!=null) { result.append("\" from=\"").append(Util.encodeHtml(source)); }
+    result.append("\">").append(message).append("</message>");
+    return result;
   }
 
   @Override
