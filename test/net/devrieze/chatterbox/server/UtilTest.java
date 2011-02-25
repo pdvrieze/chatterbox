@@ -1,7 +1,6 @@
 package net.devrieze.chatterbox.server;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
 
 import org.junit.Test;
 
@@ -11,6 +10,11 @@ public class UtilTest {
   @Test
   public void testEncodeHtml() {
     assertEquals("hello&quot;&amp;blue;&amp;quot&amp;quot;", Util.encodeHtml("hello\"&blue;&quot&quot;"));
+  }
+
+  @Test
+  public void testEncodeHtmlNull() {
+    assertEquals(null, Util.encodeHtml(null));
   }
 
   @Test
@@ -60,7 +64,12 @@ public class UtilTest {
 
   @Test
   public void testSanitizeHtmlCharSequence10() {
-    assertEquals("<b>&lt;a href=&quot;blabla&quot;&gt;<i>hello<Br /></I></B>", Util.sanitizeHtml("<b onload='doSomeNasty()'><a href=\"blabla\"><i>hello<br/></i></b>"));
+    assertEquals("<b>&lt;a href=&quot;blabla&quot;&gt;<i>hello<br /></i></b>", Util.sanitizeHtml("<b onload='doSomeNasty()'><a href=\"blabla\"><i>hello<br/></i></b>"));
+  }
+
+  @Test
+  public void testSanitizeHtmlCharSequenceNull() {
+    assertEquals(null, Util.sanitizeHtml(null));
   }
 
 }
