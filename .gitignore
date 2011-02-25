@@ -4,3 +4,4 @@ war/WEB-INF/classes
 war/chatterbox
 war/WEB-INF/deploy
 war/WEB-INF/lib
+test-classes
