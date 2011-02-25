@@ -9,26 +9,27 @@ import javax.jdo.annotations.Persistent;
 import javax.jdo.annotations.PrimaryKey;
 
 @PersistenceCapable
-public class PrincipalList {
+public class UserList {
   
   @NotPersistent
-  public static final String DEFAULTKEY = "principalList";
+  public static final String DEFAULTKEY = "userList";
 
+  @SuppressWarnings("unused")
   @PrimaryKey
   @Persistent
   private String key = DEFAULTKEY;
   
   @Persistent
-  private Set<String> principals;
+  private Set<String> users;
 
   public Set<String> getPrincipals() {
-    if (principals==null) {
-      principals = new TreeSet<String>(); 
+    if (users==null) {
+      users = new TreeSet<String>(); 
     }
-    return principals;
+    return users;
   }
 
-  public boolean contains(String principal) {
-    return getPrincipals().contains(principal);
+  public boolean contains(String userId) {
+    return getPrincipals().contains(userId);
   }
 }

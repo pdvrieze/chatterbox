@@ -2,7 +2,6 @@ package net.devrieze.chatterbox.server;
 
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.security.Principal;
 
 import javax.jdo.JDOObjectNotFoundException;
 import javax.jdo.PersistenceManager;
@@ -15,12 +14,14 @@ import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import com.google.appengine.api.users.User;
 import com.google.appengine.api.users.UserService;
 import com.google.appengine.api.users.UserServiceFactory;
 
 
 public class AuthFilter implements Filter {
 
+  @SuppressWarnings("unused")
   private FilterConfig filterConfig;
   private static final String SECRET = "mad2011";
 
@@ -41,9 +42,9 @@ public class AuthFilter implements Filter {
       filterChain.doFilter(req, resp);
       return;
     }
-    Principal principal = req.getUserPrincipal();
-    if (principal!=null) {
-      if (isAllowed(principal)) {
+    User user = userService.getCurrentUser();
+    if (user!=null) {
+      if (isAllowed(user)) {
         filterChain.doFilter(req, resp);
         return;
       } else {
@@ -51,7 +52,7 @@ public class AuthFilter implements Filter {
         if ("POST".equals(req.getMethod())){
           String token = req.getParameter("key");
           if (SECRET.equals(token)) {
-            addAllowedPrincipal(principal);
+            addAllowedUser(user);
             resp.sendRedirect(resp.encodeRedirectURL(req.getRequestURI()));
             return;
           } else {
@@ -59,20 +60,20 @@ public class AuthFilter implements Filter {
           }
         }
         PrintWriter out = resp.getWriter();
-        out.println("<html><head><title>Provide access token</title></head><body>");
+        out.println("<!DOCTYPE html>\n<html><head><title>Provide access token</title></head><body>");
         out.print("<div style='margin:5em; border: 1px solid black; padding: 2em;'><div style='margin-bottom:2em;'>");
         out.print(extramsg);
         out.print("</div><div><form method='POST' action='"+req.getRequestURI()+"'>");
         out.println("Please provide your access token</div><div><input type='text' name='key' /><button type='submit'>Submit</button></form></div>");
-        out.println("<div style='margin-top: 1em;'>You are logged in as "+principal.toString()+" <a href=\""+userService.createLogoutURL(req.getRequestURI())+"\">logout</a></div></div>");
+        out.println("<div style='margin-top: 1em;'>You are logged in as "+user.getNickname()+"("+user.getEmail()+") <a href=\""+userService.createLogoutURL(req.getRequestURI())+"\">logout</a></div></div>");
         out.println("</body></html>");
-        resp.setStatus(HttpServletResponse.SC_OK);
+        resp.setStatus(HttpServletResponse.SC_FORBIDDEN);
         return;
       }
     } else {
       //resp.sendRedirect(userService.createLoginURL(req.getRequestURI()));
       PrintWriter out = resp.getWriter();
-      out.println("<html><head><title>Please login</title></head><body>");
+      out.println("<!DOCTYPE html>\n<html><head><title>Please login</title></head><body>");
       out.print("<div style='margin:5em; border: 1px solid black; padding: 2em;'><div style='margin-bottom:2em;'>");
       out.print("Please <a href=\"");
       if (req.getRequestURI().endsWith("logout")) {
@@ -83,7 +84,7 @@ public class AuthFilter implements Filter {
       out.print("\">login</a></div>");
       out.println("</body></html>");
       
-      resp.setStatus(HttpServletResponse.SC_OK);
+      resp.setStatus(HttpServletResponse.SC_FORBIDDEN);
       return;
     }
   }
@@ -106,35 +107,31 @@ public class AuthFilter implements Filter {
     return s;
   }
 
-  private void addAllowedPrincipal(Principal principal) {
+  private void addAllowedUser(User user) {
     PersistenceManager pm = ChatterboxServlet.getPMF().getPersistenceManager();
     try {
-      PrincipalList principalList = getPrincipalList(pm);
-      principalList.getPrincipals().add(principal.toString());
+      UserList userList = getUserList(pm);
+      userList.getPrincipals().add(user.getUserId());
     } finally {
       pm.close();
     }
   }
 
-  private boolean isAdmin(Principal principal) {
-    return "paul.devrieze@gmail.com".equals(principal.toString());
-  }
-
-  private boolean isAllowed(Principal principal) {
+  private boolean isAllowed(User user) {
     PersistenceManager pm = ChatterboxServlet.getPMF().getPersistenceManager();
     try {
-      PrincipalList principalList = getPrincipalList(pm);
-      return principalList.contains(principal.toString());
+      UserList userList = getUserList(pm);
+      return userList.contains(user.getUserId());
     } finally {
       pm.close();
     }
   }
 
-  private PrincipalList getPrincipalList(PersistenceManager pm) {
+  private UserList getUserList(PersistenceManager pm) {
     try {
-      return pm.getObjectById(PrincipalList.class, PrincipalList.DEFAULTKEY);
+      return pm.getObjectById(UserList.class, UserList.DEFAULTKEY);
     } catch (JDOObjectNotFoundException e) {
-      return pm.makePersistent(new PrincipalList());
+      return pm.makePersistent(new UserList());
     }
   }
 
