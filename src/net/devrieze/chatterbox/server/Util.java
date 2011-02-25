@@ -8,7 +8,10 @@ public final class Util {
 
   private Util() {}
 
-  public static String encodeHtml(String source) {
+  public static String encodeHtml(CharSequence source) {
+    if (source==null) {
+      return null;
+    }
     StringBuilder result = null;
     char c;
     String repl = null;
@@ -24,19 +27,28 @@ public final class Util {
       if (repl!=null) {
         if (result==null) {
           result = new StringBuilder((source.length()*3)/2);
-          result.append(source.substring(0, i));
+          result.append(source.subSequence(0, i));
         }
         result.append(repl);
       } else if (result!=null) { result.append(c); }
     }
-    if (result==null) { return source; }
+    if (result==null) { return source.toString(); }
     return result.toString();
   }
   
   public static String sanitizeHtml(CharSequence orig) {
-    StringBuilder result = new StringBuilder(orig.length());
-    sanitizeHtml(0, result, null, orig);
-    return result.toString();
+    if (orig==null) { 
+      return null; 
+    }
+    try {
+      StringBuilder result = new StringBuilder(orig.length());
+      sanitizeHtml(0, result, null, orig);
+      return result.toString();
+    } catch (RuntimeException e) {
+      System.err.println("Error sanitizing HTML, just encoding the lot now: "+e.getMessage());
+      e.printStackTrace();
+      return encodeHtml(orig);
+    }
   }
   
   private static int sanitizeHtml(int startPos, StringBuilder result, String closeTag, CharSequence orig) {
