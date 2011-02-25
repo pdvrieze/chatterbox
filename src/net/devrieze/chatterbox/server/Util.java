@@ -107,6 +107,7 @@ public final class Util {
           } else {
             if (orig.charAt(pos-1)=='/') { // Self closing tag
               result.append("<").append(tagName).append(" />");
+              return pos; 
             } else {
               result.append("<").append(tagName).append('>');
             }
