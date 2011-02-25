@@ -9,6 +9,7 @@ import javax.jdo.annotations.PrimaryKey;
 
 import com.google.appengine.api.datastore.Key;
 import com.google.appengine.api.datastore.KeyFactory;
+import com.google.appengine.api.users.UserServiceFactory;
 
 @PersistenceCapable
 public class Message {
@@ -27,10 +28,14 @@ public class Message {
   @Persistent
   private Long msgTime;
 
+  @Persistent
+  private String source;
+
   public Message(long index, String message) {
     this.index = index;
     this.key = KeyFactory.createKey(Message.class.getSimpleName(), index);
     this.message = message;
+    this.source = UserServiceFactory.getUserService().getCurrentUser().getEmail();
     msgTime = Calendar.getInstance().getTimeInMillis();
   }
 
@@ -45,7 +50,8 @@ public class Message {
   public CharSequence toXML() {
     // Capacity estimated to 40 characters plus message length
     return new StringBuilder(40+message.length()).append("<message index=\"").append(getIndex()).append("\" epoch=\"")
-          .append(msgTime).append("\">")
+          .append(msgTime).append("\" from=\"")
+          .append(Util.encodeHtml(source)).append("\">")
           .append(message).append("</message>");
   }
 
