@@ -12,6 +12,8 @@ public class Chatterbox implements EntryPoint {
     rootPanel.add(w);
     w.textBox.setFocus(true);
     w.textBox.selectAll();
+//    Document d = Document.get();
+//    d.getBody().getStyle().setFontSize(1.25, Unit.EM);
   }
 
 }
