@@ -21,8 +21,6 @@ public class ChatterboxServlet extends HttpServlet {
 
   private static final long serialVersionUID = 3717262307787043062L;
   
-  private static final String[] ALLOWEDTAGNAMES = { "b", "i", "p", "div", "span", "code"};
-
   private static PersistenceManagerFactory _pmf = null;
 
   public static PersistenceManagerFactory getPMF() {
@@ -180,7 +178,7 @@ public class ChatterboxServlet extends HttpServlet {
         read = in.read(buffer);
       }
     }
-    Message m = channelManager.sendMessageToChannels(sanitizeMessage(message.toString()));
+    Message m = channelManager.sendMessageToChannels(Util.sanitizeHtml(message.toString()));
     resp.getWriter().append(m.toXML());
     resp.setStatus(HttpServletResponse.SC_OK);
     return true;
@@ -213,92 +211,6 @@ public class ChatterboxServlet extends HttpServlet {
     resp.getWriter().append(result);
     resp.setStatus(HttpServletResponse.SC_OK);
     return true;
-  }
-
-  private String sanitizeMessage(CharSequence message) {
-    StringBuilder result = new StringBuilder(message.length());
-    
-    for (int i = 0; i< message.length(); ++i) {
-      char c = message.charAt(i);
-      boolean closingTag=false;
-      if (c=='<') {
-        int w = -1;
-        for (int j=i+1; j<message.length(); ++j) {
-          c = message.charAt(j);
-          if (c=='<') {
-            result.append("&lt;");
-            break;
-          } else if (c=='/') {
-            if (j==i+1) {
-              closingTag=true;
-              ++i;
-            }
-          } else if (c=='>') {
-            String tagName;
-            String tagParams = null;
-            if (w<0) {
-              tagName = message.subSequence(i+1, j).toString();
-            } else {
-              tagName = message.subSequence(i+1, w).toString();
-              tagParams = message.subSequence(w+1, j).toString();
-            }
-            CharSequence cleanedUp = cleanUpTag(tagName.toLowerCase(), tagParams, closingTag);
-            if (cleanedUp!=null) {
-              result.append(cleanedUp);
-              i=j;
-            } else {
-              result.append("&lt;");
-            }
-            break;
-          } else if (w<0 && Character.isWhitespace(c)) {
-            w = j;
-          }
-        }
-      } else if (c=='>') {
-        result.append("&gt;");
-      } else if (c=='"') {
-        result.append("&quot;");
-      } else if (c=='&') {
-        if (message.length()>=i+4) {
-          String ss = message.subSequence(i+1, i+4).toString();
-          if ("lt;".equals(ss) || "gt;".equals(ss)) {
-            result.append('&');
-            continue;
-          }
-        }
-        if (message.length()>=i+5) {
-          String ss = message.subSequence(i+1, i+5).toString();
-          if ("amp;".equals(ss)) {
-            result.append('&');
-            continue;
-          }
-        }
-        if (message.length()>=i+6) {
-          String ss = message.subSequence(i+1, i+6).toString();
-          if ("quot;".equals(ss)) {
-            result.append('&');
-            continue;
-          }
-        }
-        result.append("&amp;");
-      } else {
-        result.append(c);
-      }
-    }
-    return result.toString();
-  }
-
-  private CharSequence cleanUpTag(String tagName, String tagParams, boolean closingTag) {
-    for(String t:ALLOWEDTAGNAMES) {
-      if (t.equals(tagName)) {
-        if (closingTag) {
-          return "</"+t+">";
-        } else {
-          return "<"+t+">";
-        }
-      }
-    }
-    return null;
   }
 
   private boolean handleMessages(HttpServletRequest req, HttpServletResponse resp) throws IOException {
