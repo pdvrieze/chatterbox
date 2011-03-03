@@ -42,6 +42,13 @@ public class AuthFilter implements Filter {
       filterChain.doFilter(req, resp);
       return;
     }
+    
+    // Allow access to messages without authentication
+    if ("/chat/messages".equals(req.getRequestURI()) && req.getMethod().equals("GET")) {
+      filterChain.doFilter(req, resp);
+      return;
+    }
+    
     User user = userService.getCurrentUser();
     if (user!=null) {
       if (isAllowed(user)) {
