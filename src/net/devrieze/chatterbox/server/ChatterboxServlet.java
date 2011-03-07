@@ -14,6 +14,8 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import com.google.appengine.api.users.User;
+import com.google.appengine.api.users.UserService;
 import com.google.appengine.api.users.UserServiceFactory;
 
 
@@ -74,6 +76,19 @@ public class ChatterboxServlet extends HttpServlet {
         }
         return false;
       }
+    },
+    
+    ME("/me"){
+
+      @Override
+      public boolean handle(ChatterboxServlet servlet, Method method, HttpServletRequest req, HttpServletResponse resp) throws IOException {
+        switch (method) {
+          case GET:
+            return servlet.handleUserInfo(req, resp);
+        }
+        return false;
+      }
+      
     },
     
     BOXES("/boxes"){
@@ -291,9 +306,27 @@ public class ChatterboxServlet extends HttpServlet {
 
   private boolean handleConnect(HttpServletRequest req, HttpServletResponse resp) throws IOException {
     String response = channelManager.createChannel();
-    resp.getWriter().append(response);
+    resp.getWriter().append("<?xml version=\"1.0\"?>\n").append(response);
     resp.setContentType("text/xml");
     resp.setStatus(HttpServletResponse.SC_OK);
+    return true;
+  }
+
+  private boolean handleUserInfo(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+    PrintWriter out = resp.getWriter();
+    resp.setContentType("text/xml");
+    out.println("<?xml version=\"1.0\"?>");
+    UserService userService = UserServiceFactory.getUserService();
+    String logout = userService.createLogoutURL("/");
+    User user = userService.getCurrentUser();
+    out.append("<user id=\"").append(Util.encodeHtml(user.getUserId())).append("\">\n  <email>");
+    out.append(Util.encodeHtml(user.getEmail())).append("</email>\n  <logout>");
+    out.append(logout).append("</logout>\n");
+    if (user.getNickname()!=null) {
+      out.append("  <nickname>").append(Util.encodeHtml(user.getNickname())).append("</nickname>\n");
+    }
+    out.append("</user>");
+    
     return true;
   }
 
