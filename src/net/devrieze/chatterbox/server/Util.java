@@ -174,7 +174,7 @@ public final class Util {
     }
     for (; pos < orig.length(); ++pos) {
       c = orig.charAt(pos);
-      if (Character.isLetter(c)) {
+      if (Character.isLetter(c)||Character.isDigit(c)) {
         // Do nothing
       } else {
         String tagName2 = orig.subSequence(startPos + (endTag ? 1 : 0), pos).toString();
