@@ -63,6 +63,7 @@ public class Box {
           return true;
         }
       }
+      buffer = null;
       return false;
     }
 
@@ -79,6 +80,7 @@ public class Box {
 
     @Override
     public void remove() {
+      // TODO potentially buggy if hasNext has been called. Check for that and throw an exception
       // Not clear why we would need this method, but forwarding is correct
       iterator.remove();
     }

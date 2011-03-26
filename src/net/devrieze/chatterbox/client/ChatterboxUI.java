@@ -5,6 +5,7 @@ import net.devrieze.chatterbox.shared.FieldVerifier;
 
 import com.google.gwt.appengine.channel.client.Channel;
 import com.google.gwt.core.client.GWT;
+import com.google.gwt.dom.client.AnchorElement;
 import com.google.gwt.dom.client.DivElement;
 import com.google.gwt.dom.client.Document;
 import com.google.gwt.dom.client.Node;
@@ -45,6 +46,7 @@ public class ChatterboxUI extends Composite implements UpdateMessageEvent.Handle
   @UiField Label errorLabel;
   @UiField TextBox textBox;
   @UiField DivElement outputdiv;
+  @UiField AnchorElement logoutRef;
   Channel channel = null;
 
   private ChatterBoxQueue messageQueue;

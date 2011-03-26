@@ -193,7 +193,7 @@ public class ChatterboxServlet extends HttpServlet {
         read = in.read(buffer);
       }
     }
-    Message m = channelManager.sendMessageToChannels(Util.sanitizeHtml(message.toString()));
+    Message m = channelManager.createNewMessageAndNotify(Util.sanitizeHtml(message.toString()));
     resp.getWriter().append("<?xml version=\"1.0\"?>\n").append(m.toXML());
     resp.setStatus(HttpServletResponse.SC_OK);
     return true;

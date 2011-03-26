@@ -40,7 +40,7 @@ public class ChannelManager {
     return "<channel>" + token + "</channel>";
   }
 
-  Message sendMessageToChannels(String messageBody) {
+  Message createNewMessageAndNotify(String messageBody) {
     TokenList tokens;
     PersistenceManager pm = ChatterboxServlet.getPMF().getPersistenceManager();
     try {
