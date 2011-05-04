@@ -2,6 +2,8 @@ package net.devrieze.chatterbox.server;
 
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import javax.jdo.JDOObjectNotFoundException;
 import javax.jdo.PersistenceManager;
@@ -23,6 +25,7 @@ public class AuthFilter implements Filter {
 
   @SuppressWarnings("unused")
   private FilterConfig filterConfig;
+  private Logger logger;
   private static final String SECRET = "mad2011";
 
   @Override
@@ -34,28 +37,37 @@ public class AuthFilter implements Filter {
   public void doFilter(ServletRequest req, ServletResponse resp, FilterChain filterChain) throws IOException, ServletException {
     doFilter((HttpServletRequest)req, (HttpServletResponse) resp, filterChain);
   }
-  
+
+  private Logger getLogger() {
+    if (logger==null) {
+      logger = Logger.getLogger(getClass().getName());
+    }
+    return logger;
+  }
+
   public void doFilter(HttpServletRequest req, HttpServletResponse resp, FilterChain filterChain) throws IOException, ServletException {
 //    System.err.println("dofilter called for "+req.getRequestURI());
+    getLogger().log(Level.FINE, "Calling filter for: "+req.getRequestURI());
     UserService userService = UserServiceFactory.getUserService();
-    if (req.getRequestURI().startsWith(loginBaseURL(userService)) || req.getRequestURI().startsWith(logoutBaseURL(userService))) {
+    if (req.getRequestURI().startsWith(loginBaseURL(userService)) || req.getRequestURI().startsWith(logoutBaseURL(userService)) || req.getRequestURI().startsWith("/_ah/login")) {
+      getLogger().log(Level.FINER, "Calling not filtering authentication: "+req.getRequestURI());
       filterChain.doFilter(req, resp);
       return;
     }
-    
+
     // Allow access to messages without authentication
     if ("/chat/messages".equals(req.getRequestURI()) && req.getMethod().equals("GET")) {
       filterChain.doFilter(req, resp);
       return;
     }
-    
+
     User user = userService.getCurrentUser();
     if (user!=null) {
       if (isAllowed(user)) {
         filterChain.doFilter(req, resp);
         return;
       } else {
-        String extramsg=""; 
+        String extramsg="";
         if ("POST".equals(req.getMethod())){
           String token = req.getParameter("key");
           if (SECRET.equals(token)) {
@@ -90,7 +102,7 @@ public class AuthFilter implements Filter {
       }
       out.print("\">login</a></div>");
       out.println("</body></html>");
-      
+
       resp.setStatus(HttpServletResponse.SC_FORBIDDEN);
       return;
     }
