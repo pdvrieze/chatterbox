@@ -180,7 +180,7 @@ public class ChatterboxServlet extends HttpServlet {
       resp.setStatus(414);
       return true;
     }
-    resp.setContentType("text/xml");
+    resp.setContentType("text/xml;charset=UTF-8");
     BufferedReader in = req.getReader();
     
     // Assume most text will be ascii and as such contentlength == string length
@@ -229,8 +229,8 @@ public class ChatterboxServlet extends HttpServlet {
   }
 
   private boolean handleMessages(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+    resp.setContentType("text/xml;charset=UTF-8");
     PrintWriter out = resp.getWriter();
-    resp.setContentType("text/xml");
     out.println("<?xml version=\"1.0\"?>");
     out.println("<messages>");
     PersistenceManager pm = getPMF().getPersistenceManager();
@@ -273,8 +273,8 @@ public class ChatterboxServlet extends HttpServlet {
   }
 
   private boolean handleBoxes(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+    resp.setContentType("text/xml;charset=UTF-8");
     PrintWriter out = resp.getWriter();
-    resp.setContentType("text/xml");
     out.println("<?xml version=\"1.0\"?>");
     out.println("<boxes>");
     out.println("  <box default=\"true\">main</box>");
@@ -295,8 +295,8 @@ public class ChatterboxServlet extends HttpServlet {
     } finally {
       pm.close();
     }
+    resp.setContentType("text/xml;charset=UTF-8");
     PrintWriter out = resp.getWriter();
-    resp.setContentType("text/xml");
     out.println("<?xml version=\"1.0\"?>");
     out.println("<messages>");
     out.println("</messages>");
@@ -306,15 +306,15 @@ public class ChatterboxServlet extends HttpServlet {
 
   private boolean handleConnect(HttpServletRequest req, HttpServletResponse resp) throws IOException {
     String response = channelManager.createChannel();
+    resp.setContentType("text/xml;charset=UTF-8");
     resp.getWriter().append("<?xml version=\"1.0\"?>\n").append(response);
-    resp.setContentType("text/xml");
     resp.setStatus(HttpServletResponse.SC_OK);
     return true;
   }
 
   private boolean handleUserInfo(HttpServletRequest req, HttpServletResponse resp) throws IOException {
-    PrintWriter out = resp.getWriter();
     resp.setContentType("text/xml");
+    PrintWriter out = resp.getWriter();
     out.println("<?xml version=\"1.0\"?>");
     UserService userService = UserServiceFactory.getUserService();
     String logout = userService.createLogoutURL("/");
