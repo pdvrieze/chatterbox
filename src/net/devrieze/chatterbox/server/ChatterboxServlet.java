@@ -22,7 +22,7 @@ import com.google.appengine.api.users.UserServiceFactory;
 public class ChatterboxServlet extends HttpServlet {
 
   private static final long serialVersionUID = 3717262307787043062L;
-  
+
   private static PersistenceManagerFactory _pmf = null;
 
   public static PersistenceManagerFactory getPMF() {
@@ -36,17 +36,18 @@ public class ChatterboxServlet extends HttpServlet {
     return _pmf;
   }
 
-  
+
   private ChannelManager channelManager = new ChannelManager();
   private static enum Method {
     GET,
-    POST, 
-    DELETE, 
+    POST,
+    DELETE,
     PUT;
   }
-  
+
   private static enum Target {
     LOGOUT("/logout") {
+      @Override
       public boolean handle(ChatterboxServlet servlet, Method method, HttpServletRequest req, HttpServletResponse resp) throws IOException {
         if (method == Method.GET) {
           return servlet.handleLogout(req, resp);
@@ -54,8 +55,9 @@ public class ChatterboxServlet extends HttpServlet {
         return false;
       }
     },
-    
+
     CONNECT("/connect") {
+      @Override
       public boolean handle(ChatterboxServlet servlet, Method method, HttpServletRequest req, HttpServletResponse resp) throws IOException {
         if (method == Method.POST) {
           return servlet.handleConnect(req, resp);
@@ -63,8 +65,9 @@ public class ChatterboxServlet extends HttpServlet {
         return false;
       }
     },
-    
+
     MESSAGES("/messages"){
+      @Override
       public boolean handle(ChatterboxServlet servlet, Method method, HttpServletRequest req, HttpServletResponse resp) throws IOException {
         switch (method) {
           case GET:
@@ -77,7 +80,7 @@ public class ChatterboxServlet extends HttpServlet {
         return false;
       }
     },
-    
+
     ME("/me"){
 
       @Override
@@ -88,10 +91,11 @@ public class ChatterboxServlet extends HttpServlet {
         }
         return false;
       }
-      
+
     },
-    
+
     BOXES("/boxes"){
+      @Override
       public boolean handle(ChatterboxServlet servlet, Method method, HttpServletRequest req, HttpServletResponse resp) throws IOException {
         if (method == Method.GET) {
           return servlet.handleBoxes(req, resp);
@@ -100,7 +104,8 @@ public class ChatterboxServlet extends HttpServlet {
       }
     },
     DEFAULT("/"){
-      
+
+      @Override
       public boolean isTargetted(String target) {
         return target.endsWith(".html")|| "/".equals(target);
       }
@@ -112,16 +117,16 @@ public class ChatterboxServlet extends HttpServlet {
         }
         return false;
       }
-      
+
     }
     ;
-    
+
     private String prefix;
-    
+
     Target(String prefix) {
       this.prefix = prefix;
     }
-    
+
     public abstract boolean handle(ChatterboxServlet servlet, Method method, HttpServletRequest req, HttpServletResponse resp) throws IOException;
 
     public boolean isTargetted(String myPath) {
@@ -168,8 +173,8 @@ public class ChatterboxServlet extends HttpServlet {
       return pm.makePersistent(new Box("defaultBox"));
     }
   }
-  
-  
+
+
 
   private boolean handleMessage(HttpServletRequest req, HttpServletResponse resp) throws IOException {
     int contentLength = req.getContentLength();
@@ -180,9 +185,9 @@ public class ChatterboxServlet extends HttpServlet {
       resp.setStatus(414);
       return true;
     }
-    resp.setContentType("text/xml;charset=UTF-8");
+    resp.setContentType("text/xml; charset=UTF-8");
     BufferedReader in = req.getReader();
-    
+
     // Assume most text will be ascii and as such contentlength == string length
     char[] buffer = new char[contentLength];
     StringBuilder message = new StringBuilder(contentLength);
@@ -207,17 +212,17 @@ public class ChatterboxServlet extends HttpServlet {
   private boolean handleFile(HttpServletRequest req, HttpServletResponse resp) throws IOException {
 //    System.err.println("handlefile called for path "+req.getPathTranslated());
     String path = req.getPathTranslated();
-    if (path==null) { path = req.getRequestURI(); } 
+    if (path==null) { path = req.getRequestURI(); }
     else if (! path.startsWith("/")) {
       return false;
     }
     path = path.substring(1);
     if (path.length()==0) { path = "Chatterbox.html"; }
     if (path.contains("..")) { return false; }
-    
+
     FileReader in = new FileReader(path);
     char[] buffer = new char[10000];
-    StringBuilder result = new StringBuilder(); 
+    StringBuilder result = new StringBuilder();
     int c = in.read(buffer);
     while (c>=0) {
       result.append(buffer,0,c);
@@ -229,7 +234,7 @@ public class ChatterboxServlet extends HttpServlet {
   }
 
   private boolean handleMessages(HttpServletRequest req, HttpServletResponse resp) throws IOException {
-    resp.setContentType("text/xml;charset=UTF-8");
+    resp.setContentType("text/xml; charset=UTF-8");
     PrintWriter out = resp.getWriter();
     out.println("<?xml version=\"1.0\"?>");
     out.println("<messages>");
@@ -258,22 +263,22 @@ public class ChatterboxServlet extends HttpServlet {
           } catch (NumberFormatException e) { /* Just ignore */ }
         }
       }
-      
+
       for (Message m:b.getMessages(start, end)) {
         out.println(m.toXML());
       }
-      
+
     } finally {
       pm.close();
       out.println("</messages>");
     }
     resp.setStatus(HttpServletResponse.SC_OK);
-    
+
     return true;
   }
 
   private boolean handleBoxes(HttpServletRequest req, HttpServletResponse resp) throws IOException {
-    resp.setContentType("text/xml;charset=UTF-8");
+    resp.setContentType("text/xml; charset=UTF-8");
     PrintWriter out = resp.getWriter();
     out.println("<?xml version=\"1.0\"?>");
     out.println("<boxes>");
@@ -295,7 +300,7 @@ public class ChatterboxServlet extends HttpServlet {
     } finally {
       pm.close();
     }
-    resp.setContentType("text/xml;charset=UTF-8");
+    resp.setContentType("text/xml; charset=UTF-8");
     PrintWriter out = resp.getWriter();
     out.println("<?xml version=\"1.0\"?>");
     out.println("<messages>");
@@ -306,7 +311,7 @@ public class ChatterboxServlet extends HttpServlet {
 
   private boolean handleConnect(HttpServletRequest req, HttpServletResponse resp) throws IOException {
     String response = channelManager.createChannel();
-    resp.setContentType("text/xml;charset=UTF-8");
+    resp.setContentType("text/xml; charset=UTF-8");
     resp.getWriter().append("<?xml version=\"1.0\"?>\n").append(response);
     resp.setStatus(HttpServletResponse.SC_OK);
     return true;
@@ -326,7 +331,7 @@ public class ChatterboxServlet extends HttpServlet {
       out.append("  <nickname>").append(Util.encodeHtml(user.getNickname())).append("</nickname>\n");
     }
     out.append("</user>");
-    
+
     return true;
   }
 
@@ -342,7 +347,7 @@ public class ChatterboxServlet extends HttpServlet {
     }
     return null;
   }
-  
-  
-  
+
+
+
 }
