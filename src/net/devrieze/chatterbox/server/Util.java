@@ -51,7 +51,7 @@ public final class Util {
     TABLE("table"),
     TBODY("tbody"),
     TD("td"),
-    TFOOT("tfoot"), 
+    TFOOT("tfoot"),
     TH("th"),
     THEAD("thead"),
     TR("tr"),
@@ -59,13 +59,13 @@ public final class Util {
     UL("ul"),
     VAR("var"),
     ;
-    
+
     private String tagname;
 
     SafeTag(String tagname) {
       this.tagname = tagname;
     }
-    
+
     public String getTagname() {
       return tagname;
     }
@@ -75,7 +75,7 @@ public final class Util {
 //                                                   "code", "samp", "kbd", "var", "abbr", "acronym", "blockquote", "q", "pre", "ins", "del",
 //                                                   "h1", "h2", "h3", "h4", "h5", "h6", "table", "th", "td", "tr", "tbody", "thead", "tfoot" };
 
-  private static final String[] ALLOWEDENTITIES = { "lt", "gt", "quot", "amp", "nbsp" };
+  private static final String[] ALLOWEDENTITIES = { "lt", "gt", "quot", "amp" };
   private static Map<String,SafeTag> safeTagMap;
 
   private Util() {}
@@ -232,7 +232,7 @@ public final class Util {
       }
     }
     // TODO Auto-generated method stub
-    
+
   }
 
   private static int clearToEndOfTag(int startPos, CharSequence orig) {
