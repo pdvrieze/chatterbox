@@ -1,4 +1,4 @@
-#Fri Feb 18 13:38:29 GMT 2011
 eclipse.preferences.version=1
+jarsExcludedFromWebInfLib=/home/paul/workspace/Chatterbox/lib/gwt-gae-channel-0.4-alpha.jar
 warSrcDir=war
 warSrcDirIsOutput=true
