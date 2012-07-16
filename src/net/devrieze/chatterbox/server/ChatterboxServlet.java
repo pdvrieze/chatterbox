@@ -4,37 +4,20 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.net.URI;
 
-import javax.jdo.JDOHelper;
-import javax.jdo.JDOObjectNotFoundException;
-import javax.jdo.PersistenceManager;
-import javax.jdo.PersistenceManagerFactory;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import com.google.appengine.api.users.User;
-import com.google.appengine.api.users.UserService;
-import com.google.appengine.api.users.UserServiceFactory;
-
 
 public class ChatterboxServlet extends HttpServlet {
 
+  private static final String DEFAULT_BOX = "defaultBox";
+
+
   private static final long serialVersionUID = 3717262307787043062L;
-
-  private static PersistenceManagerFactory _pmf = null;
-
-  public static PersistenceManagerFactory getPMF() {
-    if (_pmf != null)
-      return _pmf;
-    synchronized(ChatterboxServlet.class) {
-      if (_pmf != null)
-        return _pmf;
-      _pmf = JDOHelper.getPersistenceManagerFactory("transactions-optional");
-    }
-    return _pmf;
-  }
 
 
   private ChannelManager channelManager = new ChannelManager();
@@ -166,11 +149,13 @@ public class ChatterboxServlet extends HttpServlet {
     }
   }
 
-  private Box getDefaultBox(PersistenceManager pm) {
+  private Box getDefaultBox() {
+    ChatboxManager.getBox(DEFAULT_BOX);
+    
     try {
-      return pm.getObjectById(Box.class, "defaultBox");
+      return pm.getObjectById(Box.class, DEFAULT_BOX);
     } catch (JDOObjectNotFoundException e) {
-      return pm.makePersistent(new Box("defaultBox"));
+      return pm.makePersistent(new Box());
     }
   }
 
@@ -205,7 +190,7 @@ public class ChatterboxServlet extends HttpServlet {
   }
 
   protected boolean handleLogout(HttpServletRequest req, HttpServletResponse resp) throws IOException {
-    resp.sendRedirect(UserServiceFactory.getUserService().createLogoutURL("/"));
+    resp.sendRedirect(UserManager.createLogoutURL("/"));
     return true;
   }
 
@@ -238,9 +223,9 @@ public class ChatterboxServlet extends HttpServlet {
     PrintWriter out = resp.getWriter();
     out.println("<?xml version=\"1.0\"?>");
     out.println("<messages>");
-    PersistenceManager pm = getPMF().getPersistenceManager();
+    
     try {
-      Box b = getDefaultBox(pm);
+      Box b = getDefaultBox();
       long start = b.getFirstMessageIndex();
       long end = b.getLastMessageIndex();
       {
@@ -295,7 +280,7 @@ public class ChatterboxServlet extends HttpServlet {
     }
     PersistenceManager pm = getPMF().getPersistenceManager();
     try {
-      Box b = getDefaultBox(pm);
+      Box b = getDefaultBox();
       b.clear();
     } finally {
       pm.close();

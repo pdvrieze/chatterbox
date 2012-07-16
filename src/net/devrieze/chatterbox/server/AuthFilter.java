@@ -6,20 +6,9 @@ import java.security.Principal;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import javax.jdo.JDOObjectNotFoundException;
-import javax.jdo.PersistenceManager;
-import javax.servlet.Filter;
-import javax.servlet.FilterChain;
-import javax.servlet.FilterConfig;
-import javax.servlet.ServletException;
-import javax.servlet.ServletRequest;
-import javax.servlet.ServletResponse;
+import javax.servlet.*;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-
-import com.google.appengine.api.users.User;
-import com.google.appengine.api.users.UserService;
-import com.google.appengine.api.users.UserServiceFactory;
 
 
 public class AuthFilter implements Filter {
@@ -117,22 +106,8 @@ public class AuthFilter implements Filter {
     UserManager.addAllowedUser(principal);
   }
 
-  private boolean isAllowed(User user) {
-    PersistenceManager pm = ChatterboxServlet.getPMF().getPersistenceManager();
-    try {
-      UserList userList = getUserList(pm);
-      return userList.contains(user.getUserId());
-    } finally {
-      pm.close();
-    }
-  }
-
-  private UserList getUserList(PersistenceManager pm) {
-    try {
-      return pm.getObjectById(UserList.class, UserList.DEFAULTKEY);
-    } catch (JDOObjectNotFoundException e) {
-      return pm.makePersistent(new UserList());
-    }
+  private boolean isAllowed(Principal principal) {
+    return UserManager.isAllowedUser(principal);
   }
 
   @Override

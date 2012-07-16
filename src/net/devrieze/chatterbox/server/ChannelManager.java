@@ -70,7 +70,7 @@ public class ChannelManager {
     try {
       return pm.getObjectById(Box.class, "defaultBox");
     } catch (JDOObjectNotFoundException e) {
-      return pm.makePersistent(new Box("defaultBox"));
+      return pm.makePersistent(new Box());
     }
   }
 

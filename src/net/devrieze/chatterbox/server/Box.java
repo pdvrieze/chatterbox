@@ -1,36 +1,32 @@
 package net.devrieze.chatterbox.server;
 
-import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
-
-import javax.jdo.annotations.PersistenceCapable;
-import javax.jdo.annotations.Persistent;
-import javax.jdo.annotations.PrimaryKey;
-
 
 /**
  * Class representing a chat box.
  * @author pdvrieze
  *
  */
-@PersistenceCapable
 public class Box {
   
   
   
+  private final String aBoxName;
+  private long aFirstIndex = -1;
+  private long aLastIndex = -1;
+
   private static class AdaptingIterable implements Iterable<Message> {
 
-    private final List<Message> messages;
+    private final Iterable<Message> messages;
     private final long start;
     private final long end;
 
-    public AdaptingIterable(List<Message> messages, long start, long end) {
+    public AdaptingIterable(Iterable<Message> messages, long start, long end) {
       this.start = start;
       this.end = end;
       this.messages = messages;
-      
     }
 
     @Override
@@ -88,32 +84,22 @@ public class Box {
   }
 
   //@Persistent(valueStrategy = IdGeneratorStrategy.IDENTITY)
-  @Persistent
-  @PrimaryKey
-  private String key;
-  
-  public Box(String key) {
-    this.key = key;
+  public Box(String pBoxName) {
+    aBoxName = pBoxName;
   }
-  
-  @Persistent
-  private List<Message> messages;
 
   public long getFirstMessageIndex() {
-    // TODO optimize this by querying
-    List<Message> msgs = getMessages();
-    return msgs.size()>0 ? msgs.get(0).getIndex() : 0l;
+    if (aFirstIndex<0) { aFirstIndex = ChatboxManager.getFirstIndex(aBoxName); }
+    return aFirstIndex ;
   }
   
   public long getLastMessageIndex() {
-    // TODO optimize this by using a query
-    List<Message> msgs = getMessages();
-    return msgs.size()>0 ? msgs.get(msgs.size()-1).getIndex() : 0l;
+    if (aLastIndex<0) { aLastIndex = ChatboxManager.getLastIndex(aBoxName); }
+    return aLastIndex ;
   }
   
-  public List<Message> getMessages() {
-    if (messages==null) { messages = new ArrayList<Message>(); }
-    return messages;
+  public Iterable<Message> getMessages() {
+    return ChatboxManager.getMessages(aBoxName);
   }
 
   public Iterable<Message> getMessages(long start, long end) {
@@ -123,14 +109,10 @@ public class Box {
   public Iterator<Message> iterator(long start, long end) {
     return new AdaptingIterator(getMessages().iterator(), start, end);
   }
-  
-  public String getKey() {
-    return key;
-  }
 
   public Message addMessage(String messageBody) {
     Message msg = new Message(getNextMsgIndex(),messageBody);
-    getMessages().add(msg);
+    ChatboxManager.addMessage(aBoxName, msg);
     return msg;
   }
 
@@ -139,7 +121,7 @@ public class Box {
   }
 
   public void clear() {
-    getMessages().clear();
+    ChatboxManager.clearMessages(aBoxName);
   }
 
 }
