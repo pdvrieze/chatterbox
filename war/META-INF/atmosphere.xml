@@ -1,0 +1,6 @@
+<atmosphere-handlers>
+    <!-- Jersey -->
+    <atmosphere-handler support-session="false" context-root="/chat"
+                        class-name="net.devrieze.chatterbox.server.ChannelManager">
+    </atmosphere-handler>
+</atmosphere-handlers>
