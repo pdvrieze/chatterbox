@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Context>
+  <Loader delegate="true"/>
+
+  <Resource name="jdbc/webauth" auth="Container" type="javax.sql.DataSource"
+               maxActive="100" maxIdle="30" maxWait="10000"
+               username="webadmin" password="QfWEsNjJeM" driverClassName="com.mysql.jdbc.Driver"
+               url="jdbc:mysql://localhost/webauth"/>
+  <Resource name="jdbc/chatbox" auth="Container" type="javax.sql.DataSource"
+               maxActive="100" maxIdle="30" maxWait="10000"
+               username="webadmin" password="QfWEsNjJeM" driverClassName="com.mysql.jdbc.Driver"
+               url="jdbc:mysql://localhost/chatbox"/>
+</Context>

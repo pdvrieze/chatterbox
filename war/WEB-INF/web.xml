@@ -4,76 +4,86 @@
     "http://java.sun.com/dtd/web-app_2_3.dtd">
 
 <web-app>
-  <filter>
-    <filter-name>myauth</filter-name>
-    <filter-class>net.devrieze.chatterbox.server.AuthFilter</filter-class>
-  </filter>
-  
-  <filter-mapping>
-    <filter-name>myauth</filter-name>
-    <url-pattern>/Chatterbox.html</url-pattern>
-  </filter-mapping>
-  
-  <filter-mapping>
-    <filter-name>myauth</filter-name>
-    <url-pattern>/</url-pattern>
-  </filter-mapping>
-  
-  <filter-mapping>
-    <filter-name>myauth</filter-name>
-    <url-pattern>/chat/*</url-pattern>
-  </filter-mapping>
-  
-  <filter-mapping>
-    <filter-name>myauth</filter-name>
-    <url-pattern>/chat</url-pattern>
-  </filter-mapping>
-  
-  <!-- Servlets -->
-  <!-- servlet>
-    <servlet-name>greetServlet</servlet-name>
-    <servlet-class>net.devrieze.chatterbox.server.GreetingServiceImpl</servlet-class>
-  </servlet-->
-  <servlet>
-    <servlet-name>chatServlet</servlet-name>
-    <servlet-class>net.devrieze.chatterbox.server.ChatterboxServlet</servlet-class>
-  </servlet>
-  
-  <!-- servlet-mapping>
-    <servlet-name>greetServlet</servlet-name>
-    <url-pattern>/chatterbox/greet</url-pattern>
-  </servlet-mapping-->
-  
-  <servlet-mapping>
-    <servlet-name>chatServlet</servlet-name>
-    <url-pattern>/chat</url-pattern>
-  </servlet-mapping>
-  
-  <servlet-mapping>
-    <servlet-name>chatServlet</servlet-name>
-    <url-pattern>/chat/*</url-pattern>
-  </servlet-mapping>
-  
-  <servlet-mapping>
-    <servlet-name>chatServlet</servlet-name>
-    <url-pattern>/Chatterbox.html</url-pattern>
-  </servlet-mapping>
-  
-  <!-- Default page to serve -->
-  <welcome-file-list>
-    <welcome-file>Chatterbox.html</welcome-file>
-  </welcome-file-list>
-  <resource-ref>
-  	<description>User account database</description>
-  	<res-ref-name>jdbc/webauth</res-ref-name>
-  	<res-type>javax.sql.DataSource</res-type>
-  	<res-auth>Container</res-auth>
-  </resource-ref>
-  <resource-ref>
-    <description>Chatbox database</description>
-    <res-ref-name>jdbc/chatbox</res-ref-name>
-    <res-type>javax.sql.DataSource</res-type>
-    <res-auth>Container</res-auth>
-  </resource-ref>
+	<filter>
+		<filter-name>myauth</filter-name>
+		<filter-class>net.devrieze.chatterbox.server.AuthFilter</filter-class>
+	</filter>
+
+	<filter-mapping>
+		<filter-name>myauth</filter-name>
+		<url-pattern>/Chatterbox.html</url-pattern>
+	</filter-mapping>
+
+	<filter-mapping>
+		<filter-name>myauth</filter-name>
+		<url-pattern>/</url-pattern>
+	</filter-mapping>
+
+	<filter-mapping>
+		<filter-name>myauth</filter-name>
+		<url-pattern>/chat/*</url-pattern>
+	</filter-mapping>
+
+	<filter-mapping>
+		<filter-name>myauth</filter-name>
+		<url-pattern>/chat</url-pattern>
+	</filter-mapping>
+
+	<servlet>
+		<servlet-name>AtmosphereServlet</servlet-name>
+		<description>AtmosphereServlet</description>
+		<servlet-class>org.atmosphere.cpr.AtmosphereServlet</servlet-class>
+		<!-- async-supported>true</async-supported -->
+		<load-on-startup>0</load-on-startup>
+	</servlet>
+	
+
+	<!-- Servlets -->
+	<!-- servlet> <servlet-name>greetServlet</servlet-name> <servlet-class>net.devrieze.chatterbox.server.GreetingServiceImpl</servlet-class> 
+		</servlet -->
+	<servlet>
+		<servlet-name>chatServlet</servlet-name>
+		<servlet-class>net.devrieze.chatterbox.server.ChatterboxServlet</servlet-class>
+	</servlet>
+
+	<!-- servlet-mapping> <servlet-name>greetServlet</servlet-name> <url-pattern>/chatterbox/greet</url-pattern> 
+		</servlet-mapping -->
+
+	<servlet-mapping>
+		<servlet-name>AtmosphereServlet</servlet-name>
+		<url-pattern>/chat/connect</url-pattern>
+	</servlet-mapping>
+	
+	<servlet-mapping>
+		<servlet-name>chatServlet</servlet-name>
+		<url-pattern>/chat</url-pattern>
+	</servlet-mapping>
+
+	<servlet-mapping>
+		<servlet-name>chatServlet</servlet-name>
+		<url-pattern>/chat/*</url-pattern>
+	</servlet-mapping>
+
+	<servlet-mapping>
+		<servlet-name>chatServlet</servlet-name>
+		<url-pattern>/Chatterbox.html</url-pattern>
+	</servlet-mapping>
+
+	<!-- Default page to serve -->
+	<welcome-file-list>
+		<welcome-file>Chatterbox.html</welcome-file>
+	</welcome-file-list>
+	<resource-ref>
+		<description>User account database</description>
+		<res-ref-name>jdbc/webauth</res-ref-name>
+		<res-type>javax.sql.DataSource</res-type>
+		<res-auth>Container</res-auth>
+	</resource-ref>
+	<resource-ref>
+		<description>Chatbox database</description>
+		<res-ref-name>jdbc/chatbox</res-ref-name>
+		<res-type>javax.sql.DataSource</res-type>
+		<res-auth>Container</res-auth>
+	</resource-ref>
 
 </web-app>

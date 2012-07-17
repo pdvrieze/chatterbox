@@ -5,7 +5,6 @@ import java.security.Principal;
 
 import org.atmosphere.cpr.*;
 
-
 public class ChannelManager implements AtmosphereHandler {
 
   private Broadcaster aBroadCaster;
