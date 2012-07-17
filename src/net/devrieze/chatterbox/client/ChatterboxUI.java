@@ -3,7 +3,6 @@ package net.devrieze.chatterbox.client;
 import net.devrieze.chatterbox.client.StatusEvent.StatusLevel;
 import net.devrieze.chatterbox.shared.FieldVerifier;
 
-import com.google.gwt.appengine.channel.client.Channel;
 import com.google.gwt.core.client.GWT;
 import com.google.gwt.dom.client.AnchorElement;
 import com.google.gwt.dom.client.DivElement;

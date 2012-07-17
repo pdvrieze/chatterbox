@@ -1,19 +1,14 @@
 package net.devrieze.chatterbox.server;
 
-import java.net.URI;
 import java.security.Principal;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
-import javax.naming.InitialContext;
-import javax.naming.NamingException;
 import javax.sql.DataSource;
 
-import static net.devrieze.util.DBHelper.dbHelper;
+import static net.devrieze.util.DBHelper.*;
+
+import net.devrieze.util.DBHelper;
 
 public class UserManager {
   
@@ -45,34 +40,19 @@ public class UserManager {
   }
 
   public static boolean isAllowedUser(Principal pPrincipal) {
-    ResultSet result = dbHelper(RESOURCE_REF).makeQuery(SQL_ADD_APP_PERM, "Failure to register access permission in database")
-          .addParam(SQL_I_ADD_APP_PERM_COL_USER, pPrincipal.getName())
-          .addParam(SQL_I_ADD_APP_PERM_COL_APPNAME, APPNAME)
-          .execQuery();
-    
-    
-    DataSource dataSource;
-    try {
-      dataSource = getDataSource();
-    } catch (NamingException e) {
-      Logger.getGlobal().log(Level.SEVERE, "Failure to get access to datasource", e);
-      return false;
-    }
-    try {
-      Connection connection = dataSource.getConnection();
-      PreparedStatement stmt = connection.prepareStatement(SQL_CHECK_APP_PERM);
-      stmt.setString(SQL_I_CHECK_APP_PERM_COL_USER, pPrincipal.getName());
-      stmt.setString(SQL_I_CHECK_APP_PERM_COL_APPNAME, APPNAME);
-      ResultSet result = stmt.executeQuery();
-      return result.next(); // Just want to know that there is one item
-    } catch (SQLException e) {
-      Logger.getGlobal().log(Level.SEVERE, "Failure to query access permission in database", e);
-      return false;
-    }
+    final boolean result = dbHelper(RESOURCE_REF).makeQuery(SQL_CHECK_APP_PERM, "Failure to verify access permission in database")
+          .addParam(SQL_I_CHECK_APP_PERM_COL_USER, pPrincipal.getName())
+          .addParam(SQL_I_CHECK_APP_PERM_COL_APPNAME, APPNAME)
+          .execQueryNotEmpty();
+    return result;
   }
 
   public static String createLogoutURL(String pURI) {
     return pURI;
+  }
+
+  public static String getCurrentUserEmail(Principal p) {
+    return p.getName()+"@localhost";
   }
 
 }

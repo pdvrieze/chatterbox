@@ -1,75 +1,69 @@
 package net.devrieze.chatterbox.server;
 
+import java.security.Principal;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
 
-import javax.jdo.annotations.PersistenceCapable;
-import javax.jdo.annotations.Persistent;
-import javax.jdo.annotations.PrimaryKey;
-
-import com.google.appengine.api.datastore.Key;
-import com.google.appengine.api.datastore.KeyFactory;
-import com.google.appengine.api.users.UserServiceFactory;
-
-@PersistenceCapable
 public class Message {
   
-  @SuppressWarnings("unused")
-  @Persistent
-  @PrimaryKey
-  private Key key;
+  private Long aIndex;
   
-  @Persistent
-  private Long index;
+  private String aMessageBody;
   
-  @Persistent
-  private String message;
-  
-  @Persistent
-  private Long msgTime;
+  private Long aMsgTime;
 
-  @Persistent
-  private String source;
+  private String aSender;
 
-  public Message(long index, String message) {
-    this.index = index;
-    this.key = KeyFactory.createKey(Message.class.getSimpleName(), index);
-    this.message = message;
-    this.source = UserServiceFactory.getUserService().getCurrentUser().getEmail();
-    msgTime = Calendar.getInstance().getTimeInMillis();
+  public Message(long pIndex, String pMessage, Principal pSender) {
+    this.aIndex = pIndex;
+    this.aMessageBody = pMessage;
+    this.aSender = UserManager.getCurrentUserEmail(pSender); 
+    aMsgTime = Calendar.getInstance().getTimeInMillis();
+  }
+  
+  public Message(long pIndex, String pMessageBody, long pEpoch, String pSenderEmail) {
+    aIndex = pIndex;
+    aMessageBody = pMessageBody;
+    aMsgTime = pEpoch;
+    aSender = pSenderEmail;
+    
   }
 
   public long getIndex() {
-    return index;
+    return aIndex;
   }
   
   public String getMessage() {
-    return message;
+    return aMessageBody;
   }
 
   public CharSequence toXML() {
     // Capacity estimated to 40 characters plus message length
-    StringBuilder result = new StringBuilder(40+message.length()).append("<message index=\"").append(getIndex());
-    result.append("\" epoch=\"").append(msgTime);
-    if (source!=null) { result.append("\" from=\"").append(Util.encodeHtml(source)); }
-    result.append("\">").append(message).append("</message>");
+    StringBuilder result = new StringBuilder(40+aMessageBody.length()).append("<message index=\"").append(getIndex());
+    result.append("\" epoch=\"").append(aMsgTime);
+    if (getSender()!=null) { result.append("\" from=\"").append(Util.encodeHtml(getSender())); }
+    result.append("\">").append(aMessageBody).append("</message>");
     return result;
   }
 
   @Override
   public String toString() {
-    return new StringBuilder(12+message.length()).append(index).append(": ").append(message).toString();
+    return new StringBuilder(12+aMessageBody.length()).append(aIndex).append(": ").append(aMessageBody).toString();
   }
   
   public long getMsgTime() {
-    return msgTime;
+    return aMsgTime;
   }
   
   public GregorianCalendar getMsgDate() {
     // Explicit time so as to not to incur cost of getting current time
     GregorianCalendar calendar = new GregorianCalendar(1970, 1, 1);
-    calendar.setTimeInMillis(msgTime);
+    calendar.setTimeInMillis(aMsgTime);
     return calendar;
+  }
+
+  public String getSender() {
+    return aSender;
   }
   
 }

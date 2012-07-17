@@ -1,85 +1,79 @@
 package net.devrieze.chatterbox.server;
 
-import java.util.Iterator;
+import java.io.IOException;
+import java.security.Principal;
 
-import javax.jdo.JDOObjectNotFoundException;
-import javax.jdo.PersistenceManager;
+import org.atmosphere.cpr.*;
 
-import com.google.appengine.api.channel.ChannelFailureException;
-import com.google.appengine.api.channel.ChannelMessage;
-import com.google.appengine.api.channel.ChannelService;
-import com.google.appengine.api.channel.ChannelServiceFactory;
 
-public class ChannelManager {
+public class ChannelManager implements AtmosphereHandler {
 
-  private ChannelService channelService;
+  private Broadcaster aBroadCaster;
 
-  public ChannelManager() {
-    this.channelService = ChannelServiceFactory.getChannelService();
-  }
-
-  /**
-   * Create a new channel for the client and connect the client to it.
-   * @param greetingServiceImpl TODO
-   * @return The text needed to retrieve the token by the client.
-   */
-  String createChannel() {
-    String token;
-    String clientid;
-    PersistenceManager pm = ChatterboxServlet.getPMF().getPersistenceManager();
-    try {
-      TokenList tokens = getTokenList(pm);
-      
-      clientid=tokens.getClientId();;
-      token = channelService.createChannel(clientid);
-      tokens.add(clientid);
-//      System.out.println("Channel token: \""+token+"\" key:\""+clientid+"\"");
-    } finally {
-      pm.close();
+  Message createNewMessageAndNotify(String messageBody, Principal pSender) {
+    Box box = getDefaultBox();
+    Message message = box.addMessage(messageBody, pSender);
+    
+    if (aBroadCaster!=null) {
+      aBroadCaster.broadcast(message);
     }
-    return "<channel>" + token + "</channel>";
+    
+    return message;
   }
 
-  Message createNewMessageAndNotify(String messageBody) {
-    TokenList tokens;
-    PersistenceManager pm = ChatterboxServlet.getPMF().getPersistenceManager();
-    try {
-      Box box = getDefaultBox(pm);
-      Message message = box.addMessage(messageBody);
-      tokens = getTokenList(pm);
-      if (tokens !=null) {
-        Iterator<String> it= tokens.iterator();
-        while (it.hasNext()) {
-          String clientid = it.next();
-          try {
-//            System.out.println("Sending message to: \""+clientid+"\"");
-            channelService.sendMessage(new ChannelMessage(clientid, "<messages>"+message.toXML()+"</messages>"));
-          } catch (ChannelFailureException e) {
-//            System.out.println("Invalidating channel: "+clientid);
-            it.remove();
-          }
-        }
+  private Box getDefaultBox() {
+    return ChatboxManager.getBox(ChatterboxServlet.DEFAULT_BOX);
+  }
+
+  @Override
+  public void onRequest(AtmosphereResource pResource) throws IOException {
+    if (aBroadCaster == null) {
+      aBroadCaster = pResource.getBroadcaster();
+    }
+
+    AtmosphereRequest req = pResource.getRequest();
+
+    // First, tell Atmosphere to allow bi-directional communication by suspending.
+    if (req.getMethod().equalsIgnoreCase("GET")) {
+      // The negotiation header is just needed by the sample to list all the supported transport.
+      if (req.getHeader("negotiating") == null) {
+        pResource.suspend();
+      } else {
+        pResource.getResponse().getWriter().write("OK");
       }
-      return message;
-    } finally {
-      pm.close();
+      // Second, broadcast message to all connected users.
+    } else if (req.getMethod().equalsIgnoreCase("POST")) {
+      pResource.getBroadcaster().broadcast(req.getReader().readLine().trim());
     }
   }
 
-  private Box getDefaultBox(PersistenceManager pm) {
-    try {
-      return pm.getObjectById(Box.class, "defaultBox");
-    } catch (JDOObjectNotFoundException e) {
-      return pm.makePersistent(new Box());
+  @Override
+  public void onStateChange(AtmosphereResourceEvent pEvent) throws IOException {
+    AtmosphereResource r = pEvent.getResource();
+    AtmosphereResponse res = r.getResponse();
+
+    if (pEvent.isSuspended()) {
+
+      Message message= (Message) pEvent.getMessage();
+
+      res.getWriter().write("<messages>"+message.toXML()+"</messages>");
+      switch (r.transport()) {
+        case JSONP:
+        case AJAX:
+        case LONG_POLLING:
+          pEvent.getResource().resume();
+          break;
+        case WEBSOCKET:
+        case STREAMING:
+          res.getWriter().flush();
+          break;
+      }
+    } else if (!pEvent.isResuming()) {
+      pEvent.broadcaster().broadcast("<messages><!-- Bye --></messages>");
     }
   }
 
-  private TokenList getTokenList(PersistenceManager pm) {
-    try {
-      return pm.getObjectById(TokenList.class, TokenList.DEFAULTKEY);
-    } catch (JDOObjectNotFoundException e) {
-      TokenList tokens = new TokenList();
-      return pm.makePersistent(tokens);
-    }
+  @Override
+  public void destroy() {
   }
 }

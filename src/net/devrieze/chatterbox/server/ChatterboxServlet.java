@@ -5,6 +5,7 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.URI;
+import java.security.Principal;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
@@ -14,7 +15,7 @@ import javax.servlet.http.HttpServletResponse;
 
 public class ChatterboxServlet extends HttpServlet {
 
-  private static final String DEFAULT_BOX = "defaultBox";
+  static final String DEFAULT_BOX = "defaultBox";
 
 
   private static final long serialVersionUID = 3717262307787043062L;
@@ -42,9 +43,9 @@ public class ChatterboxServlet extends HttpServlet {
     CONNECT("/connect") {
       @Override
       public boolean handle(ChatterboxServlet servlet, Method method, HttpServletRequest req, HttpServletResponse resp) throws IOException {
-        if (method == Method.POST) {
+        /*if (method == Method.POST) {
           return servlet.handleConnect(req, resp);
-        }
+        }*/
         return false;
       }
     },
@@ -150,13 +151,7 @@ public class ChatterboxServlet extends HttpServlet {
   }
 
   private Box getDefaultBox() {
-    ChatboxManager.getBox(DEFAULT_BOX);
-    
-    try {
-      return pm.getObjectById(Box.class, DEFAULT_BOX);
-    } catch (JDOObjectNotFoundException e) {
-      return pm.makePersistent(new Box());
-    }
+    return ChatboxManager.getBox(DEFAULT_BOX);
   }
 
 
@@ -183,7 +178,7 @@ public class ChatterboxServlet extends HttpServlet {
         read = in.read(buffer);
       }
     }
-    Message m = channelManager.createNewMessageAndNotify(Util.sanitizeHtml(message.toString()));
+    Message m = channelManager.createNewMessageAndNotify(Util.sanitizeHtml(message.toString()), req.getUserPrincipal());
     resp.getWriter().append("<?xml version=\"1.0\"?>\n").append(m.toXML());
     resp.setStatus(HttpServletResponse.SC_OK);
     return true;
@@ -222,10 +217,17 @@ public class ChatterboxServlet extends HttpServlet {
     resp.setContentType("text/xml; charset=UTF-8");
     PrintWriter out = resp.getWriter();
     out.println("<?xml version=\"1.0\"?>");
-    out.println("<messages>");
     
     try {
-      Box b = getDefaultBox();
+      out.print("<messages name=\"");
+      Box b;
+      try {
+        b = getDefaultBox();
+        out.print(Util.encodeHtml(b.getName()));
+      } finally {
+        out.println("\">");
+      }
+      
       long start = b.getFirstMessageIndex();
       long end = b.getLastMessageIndex();
       {
@@ -254,7 +256,6 @@ public class ChatterboxServlet extends HttpServlet {
       }
 
     } finally {
-      pm.close();
       out.println("</messages>");
     }
     resp.setStatus(HttpServletResponse.SC_OK);
@@ -262,29 +263,41 @@ public class ChatterboxServlet extends HttpServlet {
     return true;
   }
 
-  private boolean handleBoxes(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+  private boolean handleBoxes(HttpServletRequest pReq, HttpServletResponse resp) throws IOException {
     resp.setContentType("text/xml; charset=UTF-8");
     PrintWriter out = resp.getWriter();
     out.println("<?xml version=\"1.0\"?>");
     out.println("<boxes>");
-    out.println("  <box default=\"true\">main</box>");
-    out.println("</boxes>");
+    try {
+      for (Box b:ChatboxManager.getBoxes()) {
+        out.print("  <box");
+        final CharSequence name = b.getName();
+        if (DEFAULT_BOX.equals(name)) {
+          out.print(" default=\"true\"");
+        }
+        out.print('>');
+        out.print(Util.encodeHtml(name));
+        out.println("</box>");
+      }
+    } finally {
+      out.println("</boxes>");
+    }
     resp.setStatus(HttpServletResponse.SC_OK);
     return true;
   }
 
   private boolean handleClear(HttpServletRequest req, HttpServletResponse resp) throws IOException {
-    if (! UserServiceFactory.getUserService().isUserAdmin()) {
+    return handleClear(req, resp, getDefaultBox());
+  }  
+  
+  private boolean handleClear(HttpServletRequest pReq, HttpServletResponse resp, Box pBox) throws IOException {
+    if (! ChatboxManager.isAdmin(pBox, pReq.getUserPrincipal())) {
       resp.setStatus(HttpServletResponse.SC_FORBIDDEN);
       return true;
     }
-    PersistenceManager pm = getPMF().getPersistenceManager();
-    try {
-      Box b = getDefaultBox();
-      b.clear();
-    } finally {
-      pm.close();
-    }
+
+    pBox.clear();
+
     resp.setContentType("text/xml; charset=UTF-8");
     PrintWriter out = resp.getWriter();
     out.println("<?xml version=\"1.0\"?>");
@@ -293,7 +306,8 @@ public class ChatterboxServlet extends HttpServlet {
     resp.setStatus(HttpServletResponse.SC_OK);
     return true;
   }
-
+  
+/*
   private boolean handleConnect(HttpServletRequest req, HttpServletResponse resp) throws IOException {
     String response = channelManager.createChannel();
     resp.setContentType("text/xml; charset=UTF-8");
@@ -301,21 +315,16 @@ public class ChatterboxServlet extends HttpServlet {
     resp.setStatus(HttpServletResponse.SC_OK);
     return true;
   }
-
+*/
+  
   private boolean handleUserInfo(HttpServletRequest req, HttpServletResponse resp) throws IOException {
     resp.setContentType("text/xml");
     PrintWriter out = resp.getWriter();
+    Principal p = req.getUserPrincipal();
     out.println("<?xml version=\"1.0\"?>");
-    UserService userService = UserServiceFactory.getUserService();
-    String logout = userService.createLogoutURL("/");
-    User user = userService.getCurrentUser();
-    out.append("<user id=\"").append(Util.encodeHtml(user.getUserId())).append("\">\n  <email>");
-    out.append(Util.encodeHtml(user.getEmail())).append("</email>\n  <logout>");
-    out.append(logout).append("</logout>\n");
-    if (user.getNickname()!=null) {
-      out.append("  <nickname>").append(Util.encodeHtml(user.getNickname())).append("</nickname>\n");
-    }
-    out.append("</user>");
+    out.append("<user id=\"").append(Util.encodeHtml(p.getName())).append("\">\n  <email>")
+       .append(Util.encodeHtml(p.getName())).append("@localhost</email>\n")
+       .append("</user>");
 
     return true;
   }
