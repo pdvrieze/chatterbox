@@ -2,6 +2,7 @@
 <module rename-to='chatterbox'>
   <!-- Inherit the core Web Toolkit stuff.                        -->
   <inherits name='com.google.gwt.user.User'/>
+  <inherits name='com.google.gwt.core.Core'/>
 
   <!-- Inherit the default GWT style sheet.  You can change       -->
   <!-- the theme of your GWT application by uncommenting          -->
@@ -11,7 +12,7 @@
   <!-- <inherits name='com.google.gwt.user.theme.dark.Dark'/>     -->
 
   <inherits name='com.google.gwt.xml.XML' />
-  <inherits name='com.google.gwt.appengine.channel.Channel' />
+  <inherits name='org.atmosphere.gwt.Client' />
 
   <!-- Other module inherits                                      -->
 

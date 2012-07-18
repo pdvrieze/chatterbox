@@ -1,15 +1,15 @@
 package net.devrieze.chatterbox.client;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.atmosphere.gwt.client.AtmosphereClient;
+import org.atmosphere.gwt.client.AtmosphereListener;
+
 import net.devrieze.chatterbox.client.StatusEvent.StatusLevel;
 
-import com.google.gwt.appengine.channel.client.Channel;
-import com.google.gwt.appengine.channel.client.ChannelFactory;
-import com.google.gwt.appengine.channel.client.Socket;
-import com.google.gwt.appengine.channel.client.SocketError;
-import com.google.gwt.appengine.channel.client.SocketListener;
+import com.google.gwt.core.client.GWT;
 import com.google.gwt.event.shared.EventBus;
 import com.google.gwt.http.client.Request;
 import com.google.gwt.http.client.RequestBuilder;
@@ -30,15 +30,18 @@ import com.google.gwt.xml.client.impl.DOMParseException;
 
 public class ChatterBoxQueue implements Window.ClosingHandler{
 
-
-  private final class ChannelSocketListener implements SocketListener {
+  private final class ChannelSocketListener implements AtmosphereListener {
     
+
+    public void onClose() {
+      eventBus.fireEventFromSource(new StatusEvent(StatusLevel.INFO, "channel closed"),ChatterBoxQueue.this);
+    }
+
     @Override
-    public void onOpen() {
+    public void onConnected(int pHeartbeat, int pConnectionID) {
       if (!isUseChannel()) {
-        if (channelSocket!=null) {
-          channelSocket.close();
-          channelSocket = null;
+        if (aAtmosphereClient.isRunning()) {
+          aAtmosphereClient.stop();
           eventBus.fireEventFromSource(new StatusEvent(StatusLevel.INFO, "channel opened when close requested, closing it again"),ChatterBoxQueue.this);
         } else {
           eventBus.fireEventFromSource(new StatusEvent(StatusLevel.INFO, "channel opened when close requested, socket lost"),ChatterBoxQueue.this);
@@ -49,19 +52,41 @@ public class ChatterBoxQueue implements Window.ClosingHandler{
     }
 
     @Override
-    public void onMessage(String message) {
-      handleMessagesReceived(message);
-      eventBus.fireEventFromSource(new StatusEvent(StatusLevel.DEBUG, "Received channel message"),ChatterBoxQueue.this);
+    public void onBeforeDisconnected() {
+      eventBus.fireEventFromSource(new StatusEvent(StatusLevel.INFO, "channel disconnecting"),ChatterBoxQueue.this);
     }
 
     @Override
-    public void onError(SocketError error) {
-      eventBus.fireEventFromSource(new StatusEvent(StatusLevel.WARNING, "channel opened"),ChatterBoxQueue.this);
-    }
-
-    @Override
-    public void onClose() {
+    public void onDisconnected() {
       eventBus.fireEventFromSource(new StatusEvent(StatusLevel.INFO, "channel closed"),ChatterBoxQueue.this);
+    }
+
+    @Override
+    public void onError(Throwable pException, boolean pConnected) {
+      eventBus.fireEventFromSource(new StatusEvent(StatusLevel.WARNING, "channel error: "+pException.getMessage()),ChatterBoxQueue.this);
+    }
+
+    @Override
+    public void onHeartbeat() {
+      // Ignore
+    }
+
+    @Override
+    public void onRefresh() {
+      // ignore
+    }
+
+    @Override
+    public void onAfterRefresh() {
+      // ignore
+    }
+
+    @Override
+    public void onMessage(List<? extends Serializable> pMessages) {
+      for (Serializable message: pMessages) {
+        handleMessagesReceived(message.toString());
+      }
+      eventBus.fireEventFromSource(new StatusEvent(StatusLevel.DEBUG, "Received channel messages (#"+pMessages.size()+")"),ChatterBoxQueue.this);
     }
   }
 
@@ -79,8 +104,7 @@ public class ChatterBoxQueue implements Window.ClosingHandler{
   private EventBus eventBus;
   private boolean useChannel;
 
-  private String channelKey;
-  private Socket channelSocket = null;
+  private AtmosphereClient aAtmosphereClient=null;
   
   public ChatterBoxQueue (EventBus eventBus, boolean useChannel) {
     this.eventBus = eventBus;
@@ -289,77 +313,17 @@ public class ChatterBoxQueue implements Window.ClosingHandler{
   }
 
   private void disconnectFromChannel() {
-    if (channelSocket!=null) {
-      channelSocket.close();
-      channelSocket = null;
-      channelKey = null;
+    if (aAtmosphereClient!=null) {
+      aAtmosphereClient.stop();
+      aAtmosphereClient=null;
     }
     
   }
 
   private void connectToChannel() {
-    RequestBuilder rb = new RequestBuilder(RequestBuilder.POST, CONNECTURL);
-    try {
-      rb.sendRequest(null, new RequestCallback() {
-        
-        @Override
-        public void onResponseReceived(Request request, Response response) {
-          useChannel = true;
-          handleChannelHandleReceived(request, response);
-        }
-
-        @Override
-        public void onError(Request request, Throwable exception) {
-          eventBus.fireEventFromSource(new StatusEvent(StatusLevel.INFO, "Channel connect request failed, retrying in 3 seconds", exception), this);
-          new Timer() {
-            
-            @Override
-            public void run() {
-              if (isUseChannel()) {
-                connectToChannel();
-              } 
-            }
-          }.schedule(3000);
-          
-        }
-      });
-    } catch (RequestException e) {
-      eventBus.fireEventFromSource(new StatusEvent(StatusLevel.WARNING, "Requesting messages failed", e), this);
-    }
-  }
-  
-  private void handleChannelHandleReceived(Request request, Response response) {
-    Document message;
-    try {
-      message = XMLParser.parse(response.getText());
-    } catch (DOMParseException e) {
-      eventBus.fireEventFromSource(new StatusEvent(StatusLevel.WARNING, "Error parsing message \""+response.getText()+"\"", e), this);
-      return;
-    }
-    Element root = getRootElement(message);
-    if ("channel".equals(root.getTagName())) {
-      Node n = root.getFirstChild();
-      while (n!=null) {
-        if (n.getNodeType()==Node.TEXT_NODE) {
-          Text t = (Text) n;
-          String body = t.getData().trim();
-          if (body.length()>0) {
-            channelKey = body;
-            break;
-          }
-        }
-        n = n.getNextSibling();
-      }
-      ChannelFactory.createChannel(channelKey, new ChannelFactory.ChannelCreatedCallback() {
-        
-        @Override
-        public void onChannelCreated(Channel channel) {
-          ChatterBoxQueue.this.channelSocket = channel.open(new ChannelSocketListener());
-        }
-      });
-    } else {
-      eventBus.fireEventFromSource(new StatusEvent(StatusLevel.WARNING, "Unexpected root node for channel tag: "+message), this);
-    }
+    ChannelSocketListener listener = new ChannelSocketListener();
+    aAtmosphereClient = new AtmosphereClient(GWT.getModuleBaseURL()+"/connect", listener);
+    aAtmosphereClient.start();
   }
 
   public boolean isUseChannel() {

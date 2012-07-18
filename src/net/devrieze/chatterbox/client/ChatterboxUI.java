@@ -46,7 +46,6 @@ public class ChatterboxUI extends Composite implements UpdateMessageEvent.Handle
   @UiField TextBox textBox;
   @UiField DivElement outputdiv;
   @UiField AnchorElement logoutRef;
-  Channel channel = null;
 
   private ChatterBoxQueue messageQueue;
 
