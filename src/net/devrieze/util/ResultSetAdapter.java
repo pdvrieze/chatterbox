@@ -15,15 +15,21 @@ public abstract class ResultSetAdapter<T> implements Iterable<T> {
     private final ResultSet aResultSet;
 
     private boolean aPeeked = false;
+    
+    private boolean aInitialized = false;
 
     public ResultSetAdapterIterator(ResultSet pResultSet) {
       aResultSet = pResultSet;
+    }
+
+    private void init() {
       try {
         aResultSet.beforeFirst();
         ResultSetMetaData metadata = aResultSet.getMetaData();
-        for (int i = 0; i < metadata.getColumnCount(); ++i) {
+        for (int i = 1; i <= metadata.getColumnCount(); ++i) {
           doRegisterColumn(i, metadata.getColumnName(i));
         }
+        aInitialized = true;
       } catch (SQLException e) {
         throw new RuntimeException(e);
       }
@@ -35,6 +41,7 @@ public abstract class ResultSetAdapter<T> implements Iterable<T> {
 
     @Override
     public final boolean hasNext() {
+      if (! aInitialized ) { init(); }
       aPeeked = true;
       try {
         return aResultSet.next();
@@ -45,6 +52,7 @@ public abstract class ResultSetAdapter<T> implements Iterable<T> {
 
     @Override
     public final T next() {
+      if (! aInitialized ) { init(); }
       try {
         if (!aPeeked) {
           if (!aResultSet.next()) {
@@ -62,6 +70,7 @@ public abstract class ResultSetAdapter<T> implements Iterable<T> {
 
     @Override
     public final void remove() {
+      if (! aInitialized ) {throw new IllegalStateException("Trying to remove an element before reading the iterator");}
       try {
         aResultSet.deleteRow();
       } catch (SQLFeatureNotSupportedException e) {

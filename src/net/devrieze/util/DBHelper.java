@@ -45,7 +45,10 @@ public class DBHelper {
     }
 
     DBStatementImpl(String pSQL, String pErrorMsg) throws SQLException {
-      DBHelper.this.aConnection = aDataSource.getConnection();
+      if (DBHelper.this.aConnection==null) {
+        DBHelper.this.aConnection = aDataSource.getConnection();
+        DBHelper.this.aConnection.setAutoCommit(false);
+      }
       DBHelper.this.aSQL=aConnection.prepareStatement(pSQL);
       DBHelper.this.aErrorMsg=pErrorMsg;
     }
@@ -185,7 +188,7 @@ public class DBHelper {
       checkValid();
       DBHelper.this.aValid = false;
       try {
-        return aSQL.executeQuery();
+        return aSQL==null ? null : aSQL.executeQuery();
       } catch (SQLException e) {
         logException(aErrorMsg, e);
       }
@@ -218,7 +221,7 @@ public class DBHelper {
     public Integer intQuery() {
       try {
         ResultSet rs = getSingleHelper();
-        return rs==null ? null : rs.getInt(0);
+        return rs==null ? null : rs.getInt(1);
       } catch (SQLException e) {
         logException("Error processing result set", e);
         return null;
@@ -229,7 +232,7 @@ public class DBHelper {
     public Long longQuery() {
       try {
         ResultSet rs = getSingleHelper();
-        return rs==null ? null : rs.getLong(0);
+        return rs==null ? null : rs.getLong(1);
       } catch (SQLException e) {
         logException("Error processing result set", e);
         return null;
@@ -246,7 +249,7 @@ public class DBHelper {
       if (! rs.next()) {
         return null; // No result, that is allowed, no warning
       }
-      if (rs.getObject(0)==null) { return null; }
+      if (rs.getObject(1)==null) { return null; }
       return rs;
     }
     
@@ -340,6 +343,27 @@ public class DBHelper {
       logException("Failure to create prepared statement", e);
     }
     return new DBInsertImpl();
+  }
+
+  public void commit() {
+    try {
+      aConnection.commit();
+    } catch (SQLException e) {
+      logException("Failure to commit statement", e);
+      try {
+        aConnection.rollback();
+      } catch (SQLException f) {
+        logException("Failure to rollback after failed commit", f);
+      }
+    }
+  }
+
+  public void rollback() {
+    try {
+      aConnection.rollback();
+    } catch (SQLException e) {
+      logException("Failure to roll back statement", e);
+    }
   }
 
 }

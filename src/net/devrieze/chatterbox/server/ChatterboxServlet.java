@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.security.Principal;
 
+import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
@@ -239,15 +240,18 @@ public class ChatterboxServlet extends HttpServlet {
   private boolean handleFile(HttpServletRequest req, HttpServletResponse resp) throws IOException {
 //    System.err.println("handlefile called for path "+req.getPathTranslated());
     String path = req.getPathTranslated();
-    if (path==null) { path = req.getRequestURI(); }
+    if (path==null) { path = req.getServletPath(); }
     else if (! path.startsWith("/")) {
       return false;
     }
     path = path.substring(1);
     if (path.length()==0) { path = "Chatterbox.html"; }
     if (path.contains("..")) { return false; }
+    
+    ServletContext context = req.getSession().getServletContext();
+    String path2=context.getRealPath(path);
 
-    FileReader in = new FileReader(path);
+    FileReader in = new FileReader(path2);
     char[] buffer = new char[10000];
     StringBuilder result = new StringBuilder();
     int c = in.read(buffer);

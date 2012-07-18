@@ -106,7 +106,7 @@ public class Box {
   }
 
   public Iterable<Message> getMessages(long start, long end) {
-    return getMessages(start, end);
+    return ChatboxManager.getMessages(aBoxId, start, end);
   }
   
   /**

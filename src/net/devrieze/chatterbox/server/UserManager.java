@@ -16,11 +16,11 @@ public class UserManager {
 
   private static final String APPNAME = "chatterbox";
 
-  private static final String COL_APP = "app";
+  private static final String COL_APP = "`app`";
 
-  private static final String COL_USER = "user";
+  private static final String COL_USER = "`user`";
 
-  private static final String TABLE_PERMS = "APP_PERMS";
+  private static final String TABLE_PERMS = "`app_perms`";
 
   private static final String SQL_ADD_APP_PERM = "INSERT IGNORE INTO "+TABLE_PERMS+" SET "+COL_USER+" = ?, "+COL_APP+" = ?";
   private static final int SQL_I_ADD_APP_PERM_COL_USER = 1;

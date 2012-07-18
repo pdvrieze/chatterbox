@@ -1,11 +1,13 @@
 package net.devrieze.chatterbox.server;
 
-import static net.devrieze.util.DBHelper.dbHelper;
-
 import java.security.Principal;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Iterator;
+import java.util.Set;
+import java.util.TreeSet;
+
+import static net.devrieze.util.DBHelper.*;
 
 import net.devrieze.util.DBHelper;
 import net.devrieze.util.ResultSetAdapter;
@@ -40,17 +42,20 @@ public class ChatboxManager {
 
     @Override
     protected void doRegisterColumn(int pColumnIndex, String pColumnName) {
-      if (COL_BOXID.equals(pColumnName)) {
+      if (unquote(COL_BOXID).equals(pColumnName)) {
         aBoxIdIdx=pColumnIndex;
-      } else if (COL_BOXNAME.equals(pColumnName)) {
+      } else if (unquote(COL_BOXNAME).equals(pColumnName)) {
         aNameIdx = pColumnIndex;
-      } else if (COL_BOXOWNER.equals(pColumnName)) {
+      } else if (unquote(COL_BOXOWNER).equals(pColumnName)) {
         aOwnerIdx = pColumnIndex;
       }
     }
 
     @Override
     protected Box doCreateElem(ResultSet pResultSet) throws SQLException {
+      if (aBoxIdIdx<1 || aNameIdx < 1 || aOwnerIdx<1) {
+        throw new IllegalArgumentException("The given query does not return the expected columns");
+      }
       int boxId = pResultSet.getInt(aBoxIdIdx);
       String boxName = pResultSet.getString(aNameIdx);
       String owner = pResultSet.getString(aOwnerIdx);
@@ -85,19 +90,22 @@ public class ChatboxManager {
 
     @Override
     protected void doRegisterColumn(int pColumnIndex, String pColumnName) {
-      if (COL_EPOCH.equals(pColumnName)) {
+      if (unquote(COL_EPOCH).equals(pColumnName)) {
         aEpochIdx=pColumnIndex;
-      } else if (COL_MSG_INDEX.equals(pColumnName)) {
+      } else if (unquote(COL_MSG_INDEX).equals(pColumnName)) {
         aMsgIndexIdx = pColumnIndex;
-      } else if (COL_MESSAGE.equals(pColumnName)) {
+      } else if (unquote(COL_MESSAGE).equals(pColumnName)) {
         aMsgIdx = pColumnIndex;
-      } else if (COL_SENDER.equals(pColumnName)) {
+      } else if (unquote(COL_SENDER).equals(pColumnName)) {
         aSenderIdx = pColumnIndex;
       }
     }
 
     @Override
     protected Message doCreateElem(ResultSet pResultSet) throws SQLException {
+      if (aEpochIdx<1 || aMsgIndexIdx < 1 || aMsgIdx<1 || aSenderIdx < 1) {
+        throw new IllegalArgumentException("The given query does not return the expected columns");
+      }
       long index = pResultSet.getLong(aMsgIndexIdx);
       String messageBody = pResultSet.getString(aMsgIdx);
       long epoch = pResultSet.getLong(aEpochIdx);
@@ -107,7 +115,7 @@ public class ChatboxManager {
     
   }
   
-  private static final String DB_RESOURCE = "jdbc/chatbox";
+  private static final String DB_RESOURCE = "java:/comp/env/jdbc/chatbox";
   
   private static final String TABLE_MESSAGES = "`messages`";
   private static final String TABLE_BOXES = "`boxes`";
@@ -170,6 +178,8 @@ public class ChatboxManager {
   private static final String SQL_QUERY_ALL_MESSAGES = SQL_QUERY_MESSAGES_BASE + SQL_SORT_MESSAGES;
   private static final String SQL_QUERY_SOME_MESSAGES = SQL_QUERY_MESSAGES_BASE + " AND "+COL_MSG_INDEX+" >= ? AND "+COL_MSG_INDEX+" <= ?" + SQL_SORT_MESSAGES;
 
+  private static boolean _tables_ensured = false;
+
   public static Box getBox(String pBoxName) {
     ensureTables();
     Iterator<Box> it = new BoxAdapterIterator(
@@ -185,30 +195,69 @@ public class ChatboxManager {
     }
   }
 
-  private static void ensureTables() {
+  static void ensureTables() {
+    if (_tables_ensured ) { return; }
+    _tables_ensured = true;
+    
+    
     DBHelper helper = dbHelper(DB_RESOURCE);
     
-    if (helper.makeQuery(SQL_HAS_TABLES).execQueryEmpty()) {
-      if (! (helper.makeQuery(SQL_CREATE_BOXES).exec() && 
-             helper.makeQuery(SQL_CREATE_TOKENS).exec() &&
-             helper.makeQuery(SQL_CREATE_MESSAGES).execCommit())) {
-        throw new RuntimeException("Tables could not be created");
+    Set<String> tables = new TreeSet<String>();
+    for (String table: new StringAdapter(helper.makeQuery(SQL_HAS_TABLES).execQuery())) {
+      tables.add(table);
+    }
+    boolean success = true;
+    boolean changed = false;
+    if (! tables.contains(unquote(TABLE_BOXES))) {
+      success = helper.makeQuery(SQL_CREATE_BOXES).exec();
+      changed = changed || success;
+    }
+    if (success && (! tables.contains(unquote(TABLE_MESSAGES)))) {
+      success = helper.makeQuery(SQL_CREATE_MESSAGES).exec();
+      changed = changed || success;
+    }
+    if (success && (! tables.contains(unquote(TABLE_TOKENS)))) {
+      success = helper.makeQuery(SQL_CREATE_TOKENS).exec();
+      changed = changed || success;
+    }
+    if (success) {
+      if (changed) {
+        helper.commit();
       }
+    } else {
+      helper.rollback();
+      throw new RuntimeException("Tables could not be created");
     }
   }
 
+  private static String unquote(String pQuoted) {
+    String result = pQuoted;
+    char c=result.charAt(0);
+    if (c=='"' || c=='\'' || c=='`') {
+      result = result.substring(1);
+    } else { c=0;} 
+    
+    char d=result.charAt(result.length()-1);
+    if (c==d || (c==0 && (d=='"' || d=='\'' || d=='`') )) {
+      result = result.substring(0, result.length()-1);
+    }
+    return result;
+  }
+
   public static long getFirstIndex(int pBoxId) {
-    return dbHelper(DB_RESOURCE)
+    final Long result = dbHelper(DB_RESOURCE)
         .makeQuery(SQL_GET_FIRST_INDEX, "Could not determine the first message")
         .addParam(1, pBoxId)
         .longQuery();
+    return result == null ? 0 : result.longValue();
   }
 
   public static long getLastIndex(int pBoxId) {
-    return dbHelper(DB_RESOURCE)
+    final Long result = dbHelper(DB_RESOURCE)
         .makeQuery(SQL_GET_LAST_INDEX, "Could not determine the last message")
         .addParam(1, pBoxId)
         .longQuery();
+    return result == null ? 0 : result.longValue();
   }
 
   public static void clearMessages(int pBoxId) {
@@ -222,9 +271,10 @@ public class ChatboxManager {
     DBHelper helper = dbHelper(DB_RESOURCE);
     boolean retry;
     do {
-      long newIndex=1+helper.makeQuery(SQL_GET_LAST_INDEX, "Could not determine the last message")
+      final Long oldIndex = helper.makeQuery(SQL_GET_LAST_INDEX, "Could not determine the last message")
           .addParam(1, pBoxId)
           .longQuery();
+      long newIndex=oldIndex==null ? 0 : 1+oldIndex.longValue();
   
       if (! helper.makeQuery(SQL_INSERT_MESSAGE)
           .addParam(1, pBoxId)
@@ -251,7 +301,7 @@ public class ChatboxManager {
     return new MessageAdapter(rs);
   }
 
-  public static Iterable<Message> getMessageRange(int pBoxId, long pStart, long pEnd) {
+  public static Iterable<Message> getMessages(int pBoxId, long pStart, long pEnd) {
     ResultSet rs = dbHelper(DB_RESOURCE)
         .makeQuery(SQL_QUERY_SOME_MESSAGES)
         .addParam(1, pBoxId)

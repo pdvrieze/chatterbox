@@ -49,7 +49,7 @@ public class AuthFilter implements Filter {
     }
 
     // Allow access to messages without authentication
-    if ("/chat/messages".equals(req.getRequestURI()) && req.getMethod().equals("GET")) {
+    if ("/messages".equals(req.getServletPath()) && req.getMethod().equals("GET")) {
       filterChain.doFilter(req, resp);
       return;
     }
@@ -120,6 +120,7 @@ public class AuthFilter implements Filter {
   @Override
   public void init(FilterConfig arg0) throws ServletException {
     this.filterConfig = arg0;
+    ChatboxManager.ensureTables();
   }
 
 }
