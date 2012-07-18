@@ -23,12 +23,12 @@ public class UserManager {
   private static final String TABLE_PERMS = "APP_PERMS";
 
   private static final String SQL_ADD_APP_PERM = "INSERT IGNORE INTO "+TABLE_PERMS+" SET "+COL_USER+" = ?, "+COL_APP+" = ?";
-  private static final int SQL_I_ADD_APP_PERM_COL_USER = 0;
-  private static final int SQL_I_ADD_APP_PERM_COL_APPNAME = 1;
+  private static final int SQL_I_ADD_APP_PERM_COL_USER = 1;
+  private static final int SQL_I_ADD_APP_PERM_COL_APPNAME = 2;
   
   private static final String SQL_CHECK_APP_PERM = "SELECT "+COL_USER+" FROM "+TABLE_PERMS+" WHERE "+COL_USER+"=? AND "+COL_APP+" = ?";
-  private static final int SQL_I_CHECK_APP_PERM_COL_USER = 0;
-  private static final int SQL_I_CHECK_APP_PERM_COL_APPNAME = 1;
+  private static final int SQL_I_CHECK_APP_PERM_COL_USER = 1;
+  private static final int SQL_I_CHECK_APP_PERM_COL_APPNAME = 2;
 
   static DataSource aDataSource;
 
