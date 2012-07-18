@@ -3,5 +3,5 @@ war/WEB-INF/appengine-generated
 war/WEB-INF/classes
 war/chatterbox
 war/WEB-INF/deploy
-war/WEB-INF/lib
+war/WEB-INF/lib/gwt-servlet.jar
 test-classes
