@@ -231,8 +231,6 @@ public final class Util {
         safeTagMap.put(t.getTagname(), t);
       }
     }
-    // TODO Auto-generated method stub
-
   }
 
   private static int clearToEndOfTag(int startPos, CharSequence orig) {

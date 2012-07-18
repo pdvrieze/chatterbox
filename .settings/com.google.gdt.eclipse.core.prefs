@@ -1,4 +1,4 @@
 eclipse.preferences.version=1
-jarsExcludedFromWebInfLib=/home/paul/workspace/Chatterbox/lib/gwt-gae-channel-0.4-alpha.jar
+jarsExcludedFromWebInfLib=
 warSrcDir=war
 warSrcDirIsOutput=true

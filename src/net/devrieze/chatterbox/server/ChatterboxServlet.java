@@ -4,7 +4,6 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.net.URI;
 import java.security.Principal;
 
 import javax.servlet.ServletException;
@@ -17,10 +16,7 @@ public class ChatterboxServlet extends HttpServlet {
 
   static final String DEFAULT_BOX = "defaultBox";
 
-
   private static final long serialVersionUID = 3717262307787043062L;
-
-
   private ChannelManager channelManager = new ChannelManager();
   private static enum Method {
     GET,
@@ -63,6 +59,29 @@ public class ChatterboxServlet extends HttpServlet {
         }
         return false;
       }
+    },
+
+    TOKENS("/tokens") {
+      @Override
+      public boolean handle(ChatterboxServlet servlet, Method method, HttpServletRequest req, HttpServletResponse resp) throws IOException {
+        switch (method) {
+          case GET:
+            return servlet.handleGetAuthTokens(req,resp);
+          case DELETE:
+            return servlet.handleDelAuthTokens(req,resp);
+        }
+        return false;
+      }
+
+      @Override
+      public boolean isTargetted(String myPath) {
+        boolean result= TOKENS.prefix.equals(myPath) || (
+            myPath!=null &&
+            myPath.startsWith(TOKENS.prefix+"/"));
+        return result;
+      }
+
+
     },
 
     ME("/me"){
@@ -153,9 +172,7 @@ public class ChatterboxServlet extends HttpServlet {
   private Box getDefaultBox() {
     return ChatboxManager.getBox(DEFAULT_BOX);
   }
-
-
-
+  
   private boolean handleMessage(HttpServletRequest req, HttpServletResponse resp) throws IOException {
     int contentLength = req.getContentLength();
     if (contentLength > 10240) {
@@ -165,7 +182,7 @@ public class ChatterboxServlet extends HttpServlet {
       resp.setStatus(414);
       return true;
     }
-    resp.setContentType("text/xml; charset=UTF-8");
+    resp.setContentType("text/xml; charset=utf-8");
     BufferedReader in = req.getReader();
 
     // Assume most text will be ascii and as such contentlength == string length
@@ -182,6 +199,36 @@ public class ChatterboxServlet extends HttpServlet {
     resp.getWriter().append("<?xml version=\"1.0\"?>\n").append(m.toXML());
     resp.setStatus(HttpServletResponse.SC_OK);
     return true;
+  }
+
+  protected boolean handleGetAuthTokens(HttpServletRequest pReq, HttpServletResponse resp) throws IOException {
+    if (! ChatboxManager.isSystemAdmin(pReq.getUserPrincipal())) {
+      resp.setStatus(HttpServletResponse.SC_FORBIDDEN);
+      return true;
+    }
+    resp.setContentType("text/xml; charset=utf-8");
+    PrintWriter out = resp.getWriter();
+    out.append("<?xml version=\"1.0\"?>\n");
+    out.append("<authTokens>\n");
+    for(String s:ChatboxManager.getAuthTokens()){
+      out.append("  <authToken>").append(s).append("</authToken>\n");
+    }
+    out.append("</authTokens>");
+    return true;
+  }
+
+  protected boolean handleDelAuthTokens(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+    return false;
+//    resp.setContentType("text/xml; charset=utf-8");
+//    PrintWriter out = resp.getWriter();
+//    out.append("<?xml version=\"1.0\"?>\n");
+//    out.append("<authTokens>\n");
+//    Set<String> secrets = PersistenceHandler.getSettings().getSecrets();
+//    for(String s:secrets){
+//      out.append("  <authToken>").append(s).append("</authToken>\n");
+//    }
+//    out.append("</authTokens>");
+//    return true;
   }
 
   protected boolean handleLogout(HttpServletRequest req, HttpServletResponse resp) throws IOException {
@@ -214,7 +261,7 @@ public class ChatterboxServlet extends HttpServlet {
   }
 
   private boolean handleMessages(HttpServletRequest req, HttpServletResponse resp) throws IOException {
-    resp.setContentType("text/xml; charset=UTF-8");
+    resp.setContentType("text/xml; charset=utf-8");
     PrintWriter out = resp.getWriter();
     out.println("<?xml version=\"1.0\"?>");
     
@@ -264,7 +311,7 @@ public class ChatterboxServlet extends HttpServlet {
   }
 
   private boolean handleBoxes(HttpServletRequest pReq, HttpServletResponse resp) throws IOException {
-    resp.setContentType("text/xml; charset=UTF-8");
+    resp.setContentType("text/xml; charset=utf-8");
     PrintWriter out = resp.getWriter();
     out.println("<?xml version=\"1.0\"?>");
     out.println("<boxes>");
@@ -298,7 +345,7 @@ public class ChatterboxServlet extends HttpServlet {
 
     pBox.clear();
 
-    resp.setContentType("text/xml; charset=UTF-8");
+    resp.setContentType("text/xml; charset=utf-8");
     PrintWriter out = resp.getWriter();
     out.println("<?xml version=\"1.0\"?>");
     out.println("<messages>");
@@ -310,7 +357,7 @@ public class ChatterboxServlet extends HttpServlet {
 /*
   private boolean handleConnect(HttpServletRequest req, HttpServletResponse resp) throws IOException {
     String response = channelManager.createChannel();
-    resp.setContentType("text/xml; charset=UTF-8");
+    resp.setContentType("text/xml; charset=utf-8");
     resp.getWriter().append("<?xml version=\"1.0\"?>\n").append(response);
     resp.setStatus(HttpServletResponse.SC_OK);
     return true;

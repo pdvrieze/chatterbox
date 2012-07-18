@@ -29,12 +29,12 @@ import com.google.gwt.user.client.ui.Widget;
  * Entry point classes define <code>onModuleLoad()</code>.
  */
 public class ChatterboxUI extends Composite implements UpdateMessageEvent.Handler, MoveMessagesEvent.Handler, StatusEvent.Handler {
-  
+
   private EventBus eventBus = new SimpleEventBus();
 
   interface ChatterboxBinder extends UiBinder<Widget, ChatterboxUI> {}
   private static ChatterboxBinder uiBinder = GWT.create(ChatterboxBinder.class);
-  
+
   interface MyStyle extends CssResource {
     String even();
   }
@@ -52,15 +52,16 @@ public class ChatterboxUI extends Composite implements UpdateMessageEvent.Handle
 
   public ChatterboxUI() {
     initWidget(uiBinder.createAndBindUi(this));
-    
-    textBox.setText("GWT User");
+
+    textBox.setText("");
 
     // We can add style names to widgets
     sendButton.addStyleName("sendButton");
-    
+    sendButton.setEnabled(false); // Until there is a text
+
     eventBus.addHandler(UpdateMessageEvent.TYPE, this);
     eventBus.addHandler(StatusEvent.TYPE, this);
-    
+
     messageQueue = new ChatterBoxQueue(eventBus, true);
     messageQueue.requestMessages();
   }
@@ -77,7 +78,7 @@ public class ChatterboxUI extends Composite implements UpdateMessageEvent.Handle
   @UiHandler("sendButton")
   void handleClick(ClickEvent e) {
     sendMessage();
-    
+
   }
 
   private void sendMessage() {
@@ -104,14 +105,14 @@ public class ChatterboxUI extends Composite implements UpdateMessageEvent.Handle
       }
 
     }
-    
+
     outputdiv.setInnerHTML(innerHtml.toString());
   }
 
   @Override
   public void onUpdateMessage(UpdateMessageEvent event) {
     // TODO do this much better
-    
+
     // Special case message added
     if (event.getMessageIndex()==messageQueue.size()-1) {
       Message m = messageQueue.getMessages().get(event.getMessageIndex());
@@ -140,7 +141,7 @@ public class ChatterboxUI extends Composite implements UpdateMessageEvent.Handle
    * @return the html text
    */
   private String createMessageHtml(int i, Message m) {
-    StringBuilder mHtml = new StringBuilder(); 
+    StringBuilder mHtml = new StringBuilder();
     if (m!=null) {
       if (i%2==1) {
         mHtml.append("<div class=\"even\">");
@@ -149,7 +150,7 @@ public class ChatterboxUI extends Composite implements UpdateMessageEvent.Handle
       }
       mHtml.append(m.getContent().toString());
       mHtml.append("</div>");
- 
+
     }
     return mHtml.toString();
   }

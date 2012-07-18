@@ -1,29 +1,19 @@
 package net.devrieze.chatterbox.server;
 
+import static net.devrieze.util.DBHelper.dbHelper;
+
 import java.security.Principal;
 import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
-import java.sql.SQLFeatureNotSupportedException;
 import java.util.Iterator;
 
-import static net.devrieze.util.DBHelper.*;
-
 import net.devrieze.util.DBHelper;
+import net.devrieze.util.ResultSetAdapter;
+import net.devrieze.util.ResultSetAdapter.ResultSetAdapterIterator;
+import net.devrieze.util.StringAdapter;
 
 
 public class ChatboxManager {
-  
-  static abstract class ResultSetAdapter<T> implements Iterable<T> {
-    ResultSet aResultSet;
-    
-    ResultSetAdapter(ResultSet pResultSet) {
-      aResultSet = pResultSet;
-    }
-    
-    @Override
-    public abstract Iterator<T> iterator();
-  }
   
   private static class BoxAdapter extends ResultSetAdapter<Box> {
   
@@ -83,67 +73,6 @@ public class ChatboxManager {
   
   }
 
-  static abstract class ResultSetAdapterIterator<T> implements Iterator<T> {
-
-    private final ResultSet aResultSet;
-    private boolean aPeeked = false;
-
-    public ResultSetAdapterIterator(ResultSet pResultSet) {
-      aResultSet = pResultSet;
-      try {
-        aResultSet.beforeFirst();
-        ResultSetMetaData metadata = aResultSet.getMetaData();
-        for (int i=0; i<metadata.getColumnCount();++i) {
-          doRegisterColumn(i, metadata.getColumnName(i));
-        }
-      } catch (SQLException e) {
-        throw new RuntimeException(e);
-      }
-    }
-
-    protected abstract void doRegisterColumn(int pI, String pColumnName);
-
-    abstract protected T doCreateElem(ResultSet pResultSet) throws SQLException;
-
-    @Override
-    public final boolean hasNext() {
-      aPeeked =true;
-      try {
-        return aResultSet.next();
-      } catch (SQLException e) {
-        throw new RuntimeException(e);
-      }
-    }
-
-    @Override
-    public final T next() {
-      try {
-        if (! aPeeked) {
-          if (!aResultSet.next()) {
-            throw new IllegalStateException("Trying to go beyond the last element");
-          }
-        }
-        aPeeked = false;
-        
-        return doCreateElem(aResultSet);
-        
-      } catch (SQLException e) {
-        throw new RuntimeException(e);
-      }
-    }
-
-    @Override
-    public final void remove() {
-      try {
-        aResultSet.deleteRow();
-      } catch (SQLFeatureNotSupportedException e) {
-        throw new UnsupportedOperationException(e);
-      } catch (SQLException e) {
-        throw new RuntimeException(e);
-      }
-    }
-  }
-  
   private static class MessageAdapterIterator extends ResultSetAdapterIterator<Message> {
     private int aEpochIdx = -1;
     private int aMsgIndexIdx = -1;
@@ -183,6 +112,8 @@ public class ChatboxManager {
   private static final String TABLE_MESSAGES = "`messages`";
   private static final String TABLE_BOXES = "`boxes`";
   
+  private static final String TABLE_TOKENS = "`tokens`";
+
   private static final String COL_EPOCH = "`epoch`";
   private static final String COL_MESSAGE = "`message`";
   private static final String COL_MSG_INDEX = "`msgIndex`";
@@ -194,6 +125,12 @@ public class ChatboxManager {
 
   private static final String COL_SENDER = "`sender`";
 
+  private static final String COL_TOKENNAME = "`name`";
+
+  private static final String SQL_GET_TOKENS = "SELECT "+COL_TOKENNAME+" FROM "+TABLE_TOKENS;
+
+  private static final String COL_TOKENID = "`tokenId`";
+
   private static final String SQL_INSERT_MESSAGE = "INSERT INTO "+TABLE_MESSAGES+" ("+COL_BOXID+","+COL_MSG_INDEX+","+COL_SENDER+","+COL_MESSAGE+","+COL_EPOCH+") VALUES ( ?, ?, ?, ?, ? )";
 
   private static final String SQL_CLEAR_BOX = "DELETE FROM "+TABLE_MESSAGES+" WHERE "+COL_BOXID+" = ?";
@@ -201,6 +138,12 @@ public class ChatboxManager {
   private static final String SQL_GET_BOX_WITH_NAME = "SELECT * FROM "+TABLE_BOXES+ " WHERE "+COL_BOXNAME+" = ? ORDER BY "+COL_BOXID+" LIMIT 1";
   private static final String SQL_GET_FIRST_INDEX = "SELECT min("+COL_MSG_INDEX+") from "+TABLE_MESSAGES + " WHERE "+COL_BOXID+" = ?";
   private static final String SQL_GET_LAST_INDEX = "SELECT max("+COL_MSG_INDEX+") from "+TABLE_MESSAGES + " WHERE "+COL_BOXID+" = ?";
+
+  private static final String SQL_CREATE_TOKENS="CREATE TABLE IF NOT EXISTS " + TABLE_TOKENS + " (\n" +
+        COL_TOKENID + " INTEGER NOT NULL AUTO_INCREMENT,\n"+
+        COL_TOKENNAME + " VARCHAR(50),\n" +
+        "UNIQUE ( "+COL_TOKENNAME+" ),\n" +
+        "PRIMARY KEY (" + COL_TOKENID + ") ) engine=innodb;";
 
   private static final String SQL_CREATE_BOXES="CREATE TABLE IF NOT EXISTS " + TABLE_BOXES + " (\n" +
         COL_BOXID + " INTEGER NOT NULL AUTO_INCREMENT,\n"+
@@ -247,6 +190,7 @@ public class ChatboxManager {
     
     if (helper.makeQuery(SQL_HAS_TABLES).execQueryEmpty()) {
       if (! (helper.makeQuery(SQL_CREATE_BOXES).exec() && 
+             helper.makeQuery(SQL_CREATE_TOKENS).exec() &&
              helper.makeQuery(SQL_CREATE_MESSAGES).execCommit())) {
         throw new RuntimeException("Tables could not be created");
       }
@@ -327,6 +271,24 @@ public class ChatboxManager {
   public static boolean isAdmin(Box pBox, Principal pUserPrincipal) {
     String owner = pBox.getOwner();
     return owner!=null && owner.equals(pUserPrincipal.getName());
+  }
+
+  public static boolean isValidToken(String pToken) {
+    return dbHelper(DB_RESOURCE)
+        .makeQuery("SELECT * FROM "+TABLE_TOKENS+" WHERE "+COL_TOKENNAME+"=?")
+        .addParam(1, pToken)
+        .execQueryNotEmpty();
+  }
+
+  public static boolean isSystemAdmin(Principal pUserPrincipal) {
+    return "pdvrieze".equals(pUserPrincipal.getName());
+    // TODO Don't hard code this, but look it up.
+  }
+
+  public static Iterable<String> getAuthTokens() {
+    return new StringAdapter(dbHelper(DB_RESOURCE)
+        .makeQuery(SQL_GET_TOKENS)
+        .execQuery());
   }
 
 }

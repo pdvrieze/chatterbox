@@ -6,7 +6,12 @@ import java.security.Principal;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import javax.servlet.*;
+import javax.servlet.Filter;
+import javax.servlet.FilterChain;
+import javax.servlet.FilterConfig;
+import javax.servlet.ServletException;
+import javax.servlet.ServletRequest;
+import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
@@ -16,8 +21,6 @@ public class AuthFilter implements Filter {
   @SuppressWarnings("unused")
   private FilterConfig filterConfig;
   private Logger logger;
-  private static final String SECRET = "mad2011";
-
   @Override
   public void destroy() {
     // Don't do anything yet.
@@ -59,12 +62,16 @@ public class AuthFilter implements Filter {
         String extramsg="";
         if ("POST".equals(req.getMethod())){
           String token = req.getParameter("key");
-          if (SECRET.equals(token)) {
-            addAllowedUser(principal);
-            resp.sendRedirect(resp.encodeRedirectURL(req.getRequestURI()));
-            return;
+          if (token!=null && token.length()>0) {
+            if (ChatboxManager.isValidToken(token)) {
+              addAllowedUser(principal);
+              resp.sendRedirect(resp.encodeRedirectURL(req.getRequestURI()));
+              return;
+            } else {
+              extramsg="The token is not right, you will not be authorized to use this app.";
+            }
           } else {
-            extramsg="The token is not right, you will not be authorized to use this app.";
+            extramsg="No token received, you will not be authorized to use this app.";
           }
         }
         PrintWriter out = resp.getWriter();
@@ -101,12 +108,12 @@ public class AuthFilter implements Filter {
   private String getLoginURL(String pRequestURI) {
     return "";
   }
-
-  private void addAllowedUser(Principal principal) {
+  
+  private static void addAllowedUser(Principal principal) {
     UserManager.addAllowedUser(principal);
   }
 
-  private boolean isAllowed(Principal principal) {
+  private static boolean isAllowed(Principal principal) {
     return UserManager.isAllowedUser(principal);
   }
 
