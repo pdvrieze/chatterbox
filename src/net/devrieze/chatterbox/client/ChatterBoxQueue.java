@@ -3,6 +3,8 @@ package net.devrieze.chatterbox.client;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import org.atmosphere.gwt.client.AtmosphereClient;
 import org.atmosphere.gwt.client.AtmosphereListener;
@@ -63,7 +65,9 @@ public class ChatterBoxQueue implements Window.ClosingHandler{
 
     @Override
     public void onError(Throwable pException, boolean pConnected) {
-      eventBus.fireEventFromSource(new StatusEvent(StatusLevel.WARNING, "channel error: "+pException.getMessage()),ChatterBoxQueue.this);
+      Logger logger = Logger.getGlobal();
+      logger.log(Level.WARNING, "Channel error", pException);
+      eventBus.fireEventFromSource(new StatusEvent(StatusLevel.WARNING, "channel error: "+pException.getMessage()+"<br />\n"),ChatterBoxQueue.this);
     }
 
     @Override
@@ -322,7 +326,7 @@ public class ChatterBoxQueue implements Window.ClosingHandler{
 
   private void connectToChannel() {
     ChannelSocketListener listener = new ChannelSocketListener();
-    aAtmosphereClient = new AtmosphereClient(GWT.getModuleBaseURL()+"/connect", listener);
+    aAtmosphereClient = new AtmosphereClient(GWT.getHostPageBaseURL()+"chat/connect", listener);
     aAtmosphereClient.start();
   }
 
