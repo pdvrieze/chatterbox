@@ -67,6 +67,7 @@ public class ChatterBoxQueue implements Window.ClosingHandler{
     public void onError(Throwable pException, boolean pConnected) {
       Logger logger = Logger.getLogger(ChatterboxUI.LOGGER);
       logger.log(Level.WARNING, "Channel error", pException);
+      setUseChannel(false);
       eventBus.fireEventFromSource(new StatusEvent(StatusLevel.WARNING, "channel error: "+pException.getMessage()+"<br />\n"),ChatterBoxQueue.this);
     }
 
@@ -119,7 +120,10 @@ public class ChatterBoxQueue implements Window.ClosingHandler{
   
   public void handleMessagesReceived(Request request, Response response) {
     String messageText = response.getText();
-    handleMessagesReceived(messageText);
+    // Just ignore empty messages
+    if (messageText.length()>0) {
+      handleMessagesReceived(messageText);
+    }
   }
 
   public void handleMessagesReceived(String messageText) {
