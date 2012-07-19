@@ -34,7 +34,11 @@
 		<servlet-name>AtmosphereServlet</servlet-name>
 		<servlet-class>org.atmosphere.cpr.AtmosphereServlet</servlet-class>
 		<!-- async-supported>true</async-supported -->
-		<load-on-startup>0</load-on-startup>
+		<init-param>
+		    <param-name>org.atmosphere.websocket.messageContentType</param-name>
+		    <param-value>text/xml</param-value>
+		</init-param>
+        <load-on-startup>0</load-on-startup>
 	</servlet>
 
 
@@ -88,6 +92,9 @@
 	<login-config>
 		<auth-method>BASIC</auth-method>
 	</login-config>
+    
+    <security-role><role-name>admin</role-name></security-role>
+
 	<security-constraint>
 
 		<web-resource-collection>
