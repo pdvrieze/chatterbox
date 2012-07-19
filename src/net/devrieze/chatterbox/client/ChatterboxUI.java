@@ -30,6 +30,8 @@ import com.google.gwt.user.client.ui.Widget;
  */
 public class ChatterboxUI extends Composite implements UpdateMessageEvent.Handler, MoveMessagesEvent.Handler, StatusEvent.Handler {
 
+  public static final String LOGGER = "chatterbox";
+
   private EventBus eventBus = new SimpleEventBus();
 
   interface ChatterboxBinder extends UiBinder<Widget, ChatterboxUI> {}
