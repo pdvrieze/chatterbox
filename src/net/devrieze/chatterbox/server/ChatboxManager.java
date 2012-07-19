@@ -131,6 +131,8 @@ public class ChatboxManager {
   private static final String COL_BOXID = "`boxId`";
   private static final String COL_BOXOWNER = "`owner`";
 
+  private static final String SQL_INSERT_BOX = "INSERT INTO "+TABLE_BOXES + " ( "+COL_BOXNAME+", "+COL_BOXOWNER+" ) VALUES ( ?, ? )";
+
   private static final String COL_SENDER = "`sender`";
 
   private static final String COL_TOKENNAME = "`name`";
@@ -159,7 +161,7 @@ public class ChatboxManager {
         COL_BOXOWNER + " VARCHAR(50),\n" +
   		"PRIMARY KEY (" + COL_BOXID + ") ) engine=innodb;";
   
-  private static final String SQL_CREATE_MESSAGES="CREATE TABLE " + TABLE_MESSAGES + " IF NOT EXISTS("+
+  private static final String SQL_CREATE_MESSAGES="CREATE TABLE IF NOT EXISTS " + TABLE_MESSAGES + " ("+
       COL_MSG_ID + " INTEGER NOT NULL AUTO_INCREMENT," +
       COL_BOXID + " INTEGER NOT NULL," +
       COL_MSG_INDEX + " INTEGER NOT NULL," +
@@ -339,6 +341,15 @@ public class ChatboxManager {
     return new StringAdapter(dbHelper(DB_RESOURCE)
         .makeQuery(SQL_GET_TOKENS)
         .execQuery());
+  }
+
+  public static Box createBox(String pBoxName, String pBoxOwner) {
+    dbHelper(DB_RESOURCE)
+        .makeInsert(SQL_INSERT_BOX)
+        .addParam(1, pBoxName)
+        .addParam(2, pBoxOwner)
+        .execCommit();
+    return getBox(pBoxName);
   }
 
 }

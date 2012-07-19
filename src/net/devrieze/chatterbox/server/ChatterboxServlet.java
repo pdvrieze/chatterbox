@@ -17,7 +17,10 @@ public class ChatterboxServlet extends HttpServlet {
 
   static final String DEFAULT_BOX = "defaultBox";
 
+  private static final String DEFAULT_OWNER = "pdvrieze";
+
   private static final long serialVersionUID = 3717262307787043062L;
+
   private ChannelManager channelManager = new ChannelManager();
   private static enum Method {
     GET,
@@ -171,7 +174,11 @@ public class ChatterboxServlet extends HttpServlet {
   }
 
   private Box getDefaultBox() {
-    return ChatboxManager.getBox(DEFAULT_BOX);
+    Box result = ChatboxManager.getBox(DEFAULT_BOX);
+    if (result==null) { 
+      result = ChatboxManager.createBox(DEFAULT_BOX, DEFAULT_OWNER);
+    }
+    return result;
   }
   
   private boolean handleMessage(HttpServletRequest req, HttpServletResponse resp) throws IOException {
