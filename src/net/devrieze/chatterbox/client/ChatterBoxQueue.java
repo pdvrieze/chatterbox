@@ -99,7 +99,7 @@ public class ChatterBoxQueue implements Window.ClosingHandler{
   public static final int FIRSTMESSAGE = -2;
   public static final int LASTMESSAGE = -1;
   private static final String MESSAGESBASEURL = "chat/messages";
-  private static final String CONNECTURL = "chat/connect";
+  private static final String CONNECTURL = "comet";
   private static final String MESSAGEPOSTBASEURL = "chat/messages";
   
   private ArrayList<Message> messages;
@@ -330,7 +330,7 @@ public class ChatterBoxQueue implements Window.ClosingHandler{
 
   private void connectToChannel() {
     ChannelSocketListener listener = new ChannelSocketListener();
-    aAtmosphereClient = new AtmosphereClient(GWT.getHostPageBaseURL()+"chat/connect", listener);
+    aAtmosphereClient = new AtmosphereClient(GWT.getHostPageBaseURL()+CONNECTURL, listener);
     aAtmosphereClient.start();
   }
 

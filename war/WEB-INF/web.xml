@@ -31,32 +31,39 @@
 	</filter-mapping>
 
 	<servlet>
-		<servlet-name>AtmosphereServlet</servlet-name>
-		<servlet-class>org.atmosphere.cpr.AtmosphereServlet</servlet-class>
-		<!-- async-supported>true</async-supported -->
+		<description>MeteorServlet</description>
+		<servlet-name>MeteorServlet</servlet-name>
+		<servlet-class>org.atmosphere.cpr.MeteorServlet</servlet-class>
 		<init-param>
-		    <param-name>org.atmosphere.websocket.messageContentType</param-name>
-		    <param-value>text/xml</param-value>
+			<param-name>org.atmosphere.servlet</param-name>
+			<param-value>net.devrieze.chatterbox.server.ChatterboxServlet</param-value>
 		</init-param>
-        <load-on-startup>0</load-on-startup>
+		<init-param>
+			<param-name>org.atmosphere.cpr.broadcasterCacheClass</param-name>
+			<param-value>org.atmosphere.cache.HeaderBroadcasterCache</param-value>
+		</init-param>
+		<load-on-startup>0</load-on-startup>
 	</servlet>
 
-
-	<!-- Servlets -->
-	<!-- servlet> <servlet-name>greetServlet</servlet-name> <servlet-class>net.devrieze.chatterbox.server.GreetingServiceImpl</servlet-class> 
-		</servlet -->
 	<servlet>
 		<servlet-name>chatServlet</servlet-name>
 		<servlet-class>net.devrieze.chatterbox.server.ChatterboxServlet</servlet-class>
 	</servlet>
 
-	<!-- servlet-mapping> <servlet-name>greetServlet</servlet-name> <url-pattern>/chatterbox/greet</url-pattern> 
-		</servlet-mapping -->
+	<!-- servlet-mapping>
+	  <servlet-name>greetServlet</servlet-name>
+	  <url-pattern>/chatterbox/greet</url-pattern> 
+	</servlet-mapping -->
 
-	<servlet-mapping>
+	<!-- <servlet-mapping>
 		<servlet-name>AtmosphereServlet</servlet-name>
 		<url-pattern>/chat/connect</url-pattern>
-	</servlet-mapping>
+	</servlet-mapping>-->
+
+  <servlet-mapping>
+    <servlet-name>MeteorServlet</servlet-name>
+    <url-pattern>/comet</url-pattern>
+  </servlet-mapping>
 
 	<servlet-mapping>
 		<servlet-name>chatServlet</servlet-name>
@@ -69,9 +76,9 @@
 	</servlet-mapping>
 
 	<!-- servlet-mapping>
-		<servlet-name>chatServlet</servlet-name>
-		<url-pattern>/Chatterbox.html</url-pattern>
-	</servlet-mapping-->
+	<servlet-name>chatServlet</servlet-name>
+	  <url-pattern>/Chatterbox.html</url-pattern> 
+	</servlet-mapping -->
 
 	<!-- Default page to serve -->
 	<welcome-file-list>
@@ -92,8 +99,10 @@
 	<login-config>
 		<auth-method>BASIC</auth-method>
 	</login-config>
-    
-    <security-role><role-name>admin</role-name></security-role>
+
+	<security-role>
+		<role-name>admin</role-name>
+	</security-role>
 
 	<security-constraint>
 

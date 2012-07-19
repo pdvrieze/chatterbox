@@ -6,12 +6,13 @@
 			<attribute name="javadoc_location" value="jar:platform:/resource/Chatterbox/lib/atmosphere-gwt-client-0.9.7-javadoc.jar!/"/>
 		</attributes>
 	</classpathentry>
-	<classpathentry kind="lib" path="lib/atmosphere-gwt-common-0.9.7.jar">
+	<classpathentry kind="lib" path="war/WEB-INF/lib/atmosphere-runtime-0.9.7.jar" sourcepath="atmosphere-runtime-0.9.7-sources.jar">
 		<attributes>
-			<attribute name="javadoc_location" value="jar:platform:/resource/Chatterbox/lib/atmosphere-gwt-common-0.9.7-javadoc.jar!/"/>
+			<attribute name="javadoc_location" value="jar:platform:/resource/Chatterbox/atmosphere-runtime-0.9.7-javadoc.jar!/"/>
 		</attributes>
 	</classpathentry>
-	<classpathentry kind="lib" path="war/WEB-INF/lib/atmosphere-runtime-0.9.7.jar" sourcepath="atmosphere-runtime-0.9.7-sources.jar"/>
+	<classpathentry kind="lib" path="war/WEB-INF/lib/atmosphere-gwt-common-0.9.7.jar"/>
+	<classpathentry kind="lib" path="war/WEB-INF/lib/atmosphere-gwt-server-0.9.7.jar" sourcepath="atmosphere-gwt-server-0.9.7-sources.jar"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry kind="con" path="com.google.gwt.eclipse.core.GWT_CONTAINER"/>
 	<classpathentry kind="output" path="war/WEB-INF/classes"/>

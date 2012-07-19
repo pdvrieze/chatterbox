@@ -12,6 +12,11 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.atmosphere.cpr.Broadcaster;
+import org.atmosphere.cpr.Meteor;
+
+import static org.atmosphere.cpr.AtmosphereResource.TRANSPORT.*;
+
 
 public class ChatterboxServlet extends HttpServlet {
 
@@ -20,6 +25,8 @@ public class ChatterboxServlet extends HttpServlet {
   private static final String DEFAULT_OWNER = "pdvrieze";
 
   private static final long serialVersionUID = 3717262307787043062L;
+
+  private static final String X_ATMOSPHERE_TRANSPORT = "X-Atmosphere-Transport";
 
   private ChannelManager channelManager = new ChannelManager();
   private static enum Method {
@@ -40,12 +47,12 @@ public class ChatterboxServlet extends HttpServlet {
       }
     },
 
-    CONNECT("/connect") {
+    CONNECT("/comet") {
       @Override
       public boolean handle(ChatterboxServlet servlet, Method method, HttpServletRequest req, HttpServletResponse resp) throws IOException {
-        /*if (method == Method.POST) {
+        if (method == Method.GET) {
           return servlet.handleConnect(req, resp);
-        }*/
+        }
         return false;
       }
     },
@@ -144,6 +151,10 @@ public class ChatterboxServlet extends HttpServlet {
   @Override
   protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
     Target t = getTarget(req);
+    if (t==null) {
+      resp.sendError(HttpServletResponse.SC_NOT_FOUND);
+      return;
+    }
     if (t==null || (! t.handle(this, Method.GET, req, resp))) {
       super.doGet(req, resp);
     }
@@ -152,7 +163,11 @@ public class ChatterboxServlet extends HttpServlet {
   @Override
   protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
     Target t = getTarget(req);
-    if (t==null || (! t.handle(this, Method.POST, req, resp))) {
+    if (t==null) {
+      resp.sendError(HttpServletResponse.SC_NOT_FOUND);
+      return;
+    }
+    if ((! t.handle(this, Method.POST, req, resp))) {
       super.doPost(req, resp);
     }
   }
@@ -160,7 +175,11 @@ public class ChatterboxServlet extends HttpServlet {
   @Override
   protected void doDelete(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
     Target t = getTarget(req);
-    if (t==null || (! t.handle(this, Method.DELETE, req, resp))) {
+    if (t==null) {
+      resp.sendError(HttpServletResponse.SC_NOT_FOUND);
+      return;
+    }
+    if ((! t.handle(this, Method.DELETE, req, resp))) {
       super.doDelete(req, resp);
     }
   }
@@ -168,7 +187,11 @@ public class ChatterboxServlet extends HttpServlet {
   @Override
   protected void doPut(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
     Target t = getTarget(req);
-    if (t==null || (! t.handle(this, Method.PUT, req, resp))) {
+    if (t==null) {
+      resp.sendError(HttpServletResponse.SC_NOT_FOUND);
+      return;
+    }
+    if ((! t.handle(this, Method.PUT, req, resp))) {
       super.doPut(req, resp);
     }
   }
@@ -365,15 +388,17 @@ public class ChatterboxServlet extends HttpServlet {
     return true;
   }
   
-/*
-  private boolean handleConnect(HttpServletRequest req, HttpServletResponse resp) throws IOException {
-    String response = channelManager.createChannel();
-    resp.setContentType("text/xml; charset=utf-8");
-    resp.getWriter().append("<?xml version=\"1.0\"?>\n").append(response);
-    resp.setStatus(HttpServletResponse.SC_OK);
+
+  private boolean handleConnect(HttpServletRequest req, HttpServletResponse resp) {
+    Meteor m = Meteor.build(req).addListener(channelManager);
+    resp.setContentType("text/xml;charset=utf8");
+    Broadcaster b = channelManager.getBroadcaster();
+    m.setBroadcaster(b);
+    m.resumeOnBroadcast(m.transport() == LONG_POLLING);
+    m.suspend(-1);
     return true;
   }
-*/
+
   
   private boolean handleUserInfo(HttpServletRequest req, HttpServletResponse resp) throws IOException {
     resp.setContentType("text/xml");
@@ -389,12 +414,20 @@ public class ChatterboxServlet extends HttpServlet {
 
   private Target getTarget(HttpServletRequest req) {
     String myPath = req.getPathInfo();
-    if (myPath==null) {
-      myPath=req.getRequestURI();
+    if (myPath==null || myPath.length()==0) {
+      myPath=req.getServletPath();
     }
     for (Target t:Target.values()) {
       if(t.isTargetted(myPath)) {
         return t;
+      }
+    }
+    if (myPath!=req.getServletPath()) {
+      myPath = req.getServletPath();
+      for (Target t:Target.values()) {
+        if(t.isTargetted(myPath)) {
+          return t;
+        }
       }
     }
     return null;

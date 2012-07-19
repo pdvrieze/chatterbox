@@ -1,12 +1,17 @@
 package net.devrieze.chatterbox.server;
 
-import java.io.BufferedReader;
-import java.io.IOException;
 import java.security.Principal;
+import java.util.Arrays;
 
-import org.atmosphere.cpr.*;
+import org.atmosphere.cpr.Broadcaster;
+import org.atmosphere.cpr.BroadcasterFactory;
+import org.atmosphere.websocket.WebSocketEventListenerAdapter;
+import org.mortbay.util.ajax.JSON;
 
-public class ChannelManager implements AtmosphereHandler {
+import com.google.gwt.json.client.JSONArray;
+import com.google.gwt.json.client.JSONString;
+
+public class ChannelManager extends WebSocketEventListenerAdapter {
 
   private static final String BROADCASTERNAME = "chatterbox";
   private Broadcaster aBroadCaster;
@@ -16,11 +21,15 @@ public class ChannelManager implements AtmosphereHandler {
     Message message = box.addMessage(messageBody, pSender);
     
     if (aBroadCaster==null) {
-      aBroadCaster = BroadcasterFactory.getDefault().lookup(BROADCASTERNAME, true);
+      getBroadcaster();
     }
     
     if (aBroadCaster!=null) {
-      aBroadCaster.broadcast(message);
+      // TODO evaluate the use of the mortbay JSON class
+      StringBuffer result = new StringBuffer();
+      new JSON().appendArray(result, Arrays.asList(message.toXML().toString()));
+      
+      aBroadCaster.broadcast(result.toString());
     }
     
     return message;
@@ -29,7 +38,7 @@ public class ChannelManager implements AtmosphereHandler {
   private Box getDefaultBox() {
     return ChatboxManager.getBox(ChatterboxServlet.DEFAULT_BOX);
   }
-
+/*
   @Override
   public void onRequest(AtmosphereResource pResource) throws IOException {
     if (aBroadCaster == null) {
@@ -110,5 +119,12 @@ public class ChannelManager implements AtmosphereHandler {
         resource.resume();
       }
     }
+  }
+*/
+  public Broadcaster getBroadcaster() {
+    if (aBroadCaster == null) {
+      aBroadCaster = BroadcasterFactory.getDefault().lookup(BROADCASTERNAME, true);
+    }
+    return aBroadCaster;
   }
 }
