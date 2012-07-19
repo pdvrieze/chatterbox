@@ -63,7 +63,7 @@ public class ChatterboxUI extends Composite implements UpdateMessageEvent.Handle
     eventBus.addHandler(UpdateMessageEvent.TYPE, this);
     eventBus.addHandler(StatusEvent.TYPE, this);
 
-    messageQueue = new ChatterBoxQueue(eventBus, true);
+    messageQueue = new ChatterBoxQueue(eventBus, false);
     messageQueue.requestMessages();
   }
 
@@ -79,7 +79,11 @@ public class ChatterboxUI extends Composite implements UpdateMessageEvent.Handle
   @UiHandler("sendButton")
   void handleClick(ClickEvent e) {
     sendMessage();
-
+  }
+  
+  @UiHandler("toggleChannel")
+  void handleChannelClick(ClickEvent e) {
+    messageQueue.setUseChannel(! messageQueue.isUseChannel());
   }
 
   private void sendMessage() {
