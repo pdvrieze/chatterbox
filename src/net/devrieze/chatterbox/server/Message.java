@@ -42,7 +42,7 @@ public class Message {
     StringBuilder result = new StringBuilder(40+aMessageBody.length()).append("<message index=\"").append(getIndex());
     result.append("\" epoch=\"").append(aMsgTime);
     if (getSender()!=null) { result.append("\" from=\"").append(Util.encodeHtml(getSender())); }
-    result.append("\">").append(aMessageBody).append("</message>");
+    result.append("\">").append(aMessageBody).append("</message>\n");
     return result;
   }
 

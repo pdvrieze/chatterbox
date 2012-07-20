@@ -12,8 +12,10 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.atmosphere.cpr.AtmosphereResource;
 import org.atmosphere.cpr.Broadcaster;
 import org.atmosphere.cpr.Meteor;
+import org.atmosphere.cpr.Serializer;
 
 import static org.atmosphere.cpr.AtmosphereResource.TRANSPORT.*;
 
@@ -28,7 +30,12 @@ public class ChatterboxServlet extends HttpServlet {
 
   private static final String X_ATMOSPHERE_TRANSPORT = "X-Atmosphere-Transport";
 
+  private static final Object MIME_TYPE_COMET = "application/comet";
+
   private ChannelManager channelManager = new ChannelManager();
+
+  private CometSerializer aCometSerializer;
+  
   private static enum Method {
     GET,
     POST,
@@ -389,17 +396,30 @@ public class ChatterboxServlet extends HttpServlet {
   }
   
 
-  private boolean handleConnect(HttpServletRequest req, HttpServletResponse resp) {
+  private boolean handleConnect(HttpServletRequest req, HttpServletResponse resp) throws IOException {
     Meteor m = Meteor.build(req).addListener(channelManager);
-    resp.setContentType("text/xml;charset=utf8");
+    AtmosphereResource r =m.getAtmosphereResource();
+    if (MIME_TYPE_COMET.equals(req.getContentType())){
+      resp.setContentType("application/comet;charset=utf8");
+//      m.getAtmosphereResource().setSerializer(getCometSerializer());
+    }
+    // Make sure we write an empty message
+    //resp.getWriter().write("[ \"\" ]\n");
     Broadcaster b = channelManager.getBroadcaster();
     m.setBroadcaster(b);
     m.resumeOnBroadcast(m.transport() == LONG_POLLING);
-    m.suspend(-1);
+    m.suspend(-1,false);
     return true;
   }
 
   
+  private CometSerializer getCometSerializer() {
+    if (aCometSerializer == null) {
+      aCometSerializer = new CometSerializer();
+    }
+    return aCometSerializer;
+  }
+
   private boolean handleUserInfo(HttpServletRequest req, HttpServletResponse resp) throws IOException {
     resp.setContentType("text/xml");
     PrintWriter out = resp.getWriter();

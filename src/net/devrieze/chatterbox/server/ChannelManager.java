@@ -8,12 +8,14 @@ import org.atmosphere.cpr.BroadcasterFactory;
 import org.atmosphere.websocket.WebSocketEventListenerAdapter;
 import org.mortbay.util.ajax.JSON;
 
+import net.devrieze.util.JSONObject;
+
 import com.google.gwt.json.client.JSONArray;
 import com.google.gwt.json.client.JSONString;
 
 public class ChannelManager extends WebSocketEventListenerAdapter {
 
-  private static final String BROADCASTERNAME = "chatterbox";
+  static final String BROADCASTERNAME = "chatterbox";
   private Broadcaster aBroadCaster;
 
   Message createNewMessageAndNotify(String messageBody, Principal pSender) {
@@ -25,11 +27,7 @@ public class ChannelManager extends WebSocketEventListenerAdapter {
     }
     
     if (aBroadCaster!=null) {
-      // TODO evaluate the use of the mortbay JSON class
-      StringBuffer result = new StringBuffer();
-      new JSON().appendArray(result, Arrays.asList(message.toXML().toString()));
-      
-      aBroadCaster.broadcast(result.toString());
+      aBroadCaster.broadcast(message.toXML().toString());
     }
     
     return message;
