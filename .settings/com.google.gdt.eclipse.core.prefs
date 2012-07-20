@@ -1,4 +1,4 @@
 eclipse.preferences.version=1
-jarsExcludedFromWebInfLib=
+jarsExcludedFromWebInfLib=/home/paul/workspace/Chatterbox/lib/atmosphere-gwt-client-0.9.7.jar
 warSrcDir=war
 warSrcDirIsOutput=true

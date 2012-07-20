@@ -103,7 +103,12 @@ public class ChatterBoxQueue implements Window.ClosingHandler{
     Window.addWindowClosingHandler(this);
   }
   
-  public void handleMessagesReceived(Request request, Response response) {
+  /**
+   * Handler for Asynchronous requests that result in xml messages
+   * @param request The request this handler responds to 
+   * @param response The response to be processed by the handler
+   */
+  public void handleMessagesReceived(final Request request, Response response) {
     String messageText = response.getText();
     // Just ignore empty messages
     if (messageText.length()>0) {

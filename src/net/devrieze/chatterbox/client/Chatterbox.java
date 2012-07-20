@@ -6,6 +6,7 @@ import com.google.gwt.user.client.ui.RootPanel;
 
 public class Chatterbox implements EntryPoint {
 
+  @Override
   public void onModuleLoad() {
     RootPanel rootPanel = RootPanel.get();
     ChatterboxUI w = new ChatterboxUI();

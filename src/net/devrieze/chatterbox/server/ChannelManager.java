@@ -6,8 +6,6 @@ import org.atmosphere.cpr.Broadcaster;
 import org.atmosphere.cpr.BroadcasterFactory;
 import org.atmosphere.websocket.WebSocketEventListenerAdapter;
 
-import net.devrieze.chatterbox.shared.MessagePojo;
-
 
 public class ChannelManager extends WebSocketEventListenerAdapter {
 

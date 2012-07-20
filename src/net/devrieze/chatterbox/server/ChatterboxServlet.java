@@ -12,10 +12,8 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.atmosphere.cpr.AtmosphereResource;
 import org.atmosphere.cpr.Broadcaster;
 import org.atmosphere.cpr.Meteor;
-import org.atmosphere.cpr.Serializer;
 
 import static org.atmosphere.cpr.AtmosphereResource.TRANSPORT.*;
 
@@ -27,8 +25,6 @@ public class ChatterboxServlet extends HttpServlet {
   private static final String DEFAULT_OWNER = "pdvrieze";
 
   private static final long serialVersionUID = 3717262307787043062L;
-
-  private static final String X_ATMOSPHERE_TRANSPORT = "X-Atmosphere-Transport";
 
   private static final Object MIME_TYPE_COMET = "application/comet";
 
@@ -45,20 +41,24 @@ public class ChatterboxServlet extends HttpServlet {
     LOGOUT("/logout") {
       @Override
       public boolean handle(ChatterboxServlet servlet, Method method, HttpServletRequest req, HttpServletResponse resp) throws IOException {
-        if (method == Method.GET) {
-          return servlet.handleLogout(req, resp);
+        switch (method) {
+          case GET:
+            return servlet.handleLogout(resp);
+          default:
+            return false;
         }
-        return false;
       }
     },
 
     CONNECT("/comet") {
       @Override
       public boolean handle(ChatterboxServlet servlet, Method method, HttpServletRequest req, HttpServletResponse resp) throws IOException {
-        if (method == Method.GET) {
-          return servlet.handleConnect(req, resp);
+        switch (method) {
+          case GET:
+            return servlet.handleConnect(req, resp);
+          default:
+            return false;
         }
-        return false;
       }
     },
 
@@ -72,8 +72,9 @@ public class ChatterboxServlet extends HttpServlet {
             return servlet.handleMessage(req, resp);
           case DELETE:
             return servlet.handleClear(req, resp);
+          default:
+            return false;
         }
-        return false;
       }
     },
 
@@ -85,8 +86,9 @@ public class ChatterboxServlet extends HttpServlet {
             return servlet.handleGetAuthTokens(req,resp);
           case DELETE:
             return servlet.handleDelAuthTokens(req,resp);
+          default:
+            return false;
         }
-        return false;
       }
 
       @Override
@@ -107,8 +109,9 @@ public class ChatterboxServlet extends HttpServlet {
         switch (method) {
           case GET:
             return servlet.handleUserInfo(req, resp);
+          default:
+            return false;
         }
-        return false;
       }
 
     },
@@ -116,10 +119,12 @@ public class ChatterboxServlet extends HttpServlet {
     BOXES("/boxes"){
       @Override
       public boolean handle(ChatterboxServlet servlet, Method method, HttpServletRequest req, HttpServletResponse resp) throws IOException {
-        if (method == Method.GET) {
-          return servlet.handleBoxes(req, resp);
+        switch (method) {
+          case GET:
+            return servlet.handleBoxes(resp);
+          default:
+            return false;
         }
-        return false;
       }
     },
     DEFAULT("/"){
@@ -160,7 +165,7 @@ public class ChatterboxServlet extends HttpServlet {
       resp.sendError(HttpServletResponse.SC_NOT_FOUND);
       return;
     }
-    if (t==null || (! t.handle(this, Method.GET, req, resp))) {
+    if (! t.handle(this, Method.GET, req, resp)) {
       super.doGet(req, resp);
     }
   }
@@ -254,20 +259,35 @@ public class ChatterboxServlet extends HttpServlet {
   }
 
   protected boolean handleDelAuthTokens(HttpServletRequest req, HttpServletResponse resp) throws IOException {
-    return false;
-//    resp.setContentType("text/xml; charset=utf-8");
-//    PrintWriter out = resp.getWriter();
-//    out.append("<?xml version=\"1.0\"?>\n");
-//    out.append("<authTokens>\n");
-//    Set<String> secrets = PersistenceHandler.getSettings().getSecrets();
-//    for(String s:secrets){
-//      out.append("  <authToken>").append(s).append("</authToken>\n");
-//    }
-//    out.append("</authTokens>");
-//    return true;
+    if (! ChatboxManager.isSystemAdmin(req.getUserPrincipal())) {
+      resp.setStatus(HttpServletResponse.SC_FORBIDDEN);
+      return true;
+    }
+    String token = req.getPathInfo();
+    boolean notFound;
+    if (! token.startsWith(Target.TOKENS.prefix)) {
+      notFound=true;
+    } else {
+      token = token.substring(Target.TOKENS.prefix.length());
+      if (! (token.length()>=2 && token.charAt(0)=='/')) {
+        notFound= true;
+      } else {
+        token = token.substring(1);
+        notFound = ! ChatboxManager.isValidToken(token);
+      }
+    }
+    
+    if (notFound) {
+      resp.setStatus(HttpServletResponse.SC_NOT_FOUND);
+      return true;
+    } else {
+      ChatboxManager.removeAuthToken(token);
+      handleGetAuthTokens(req, resp);
+      return true;
+    }
   }
 
-  protected boolean handleLogout(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+  protected boolean handleLogout(HttpServletResponse resp) throws IOException {
     resp.sendRedirect(UserManager.createLogoutURL("/"));
     return true;
   }
@@ -349,7 +369,7 @@ public class ChatterboxServlet extends HttpServlet {
     return true;
   }
 
-  private boolean handleBoxes(HttpServletRequest pReq, HttpServletResponse resp) throws IOException {
+  private boolean handleBoxes(HttpServletResponse resp) throws IOException {
     resp.setContentType("text/xml; charset=utf-8");
     PrintWriter out = resp.getWriter();
     out.println("<?xml version=\"1.0\"?>");
@@ -394,15 +414,13 @@ public class ChatterboxServlet extends HttpServlet {
   }
   
 
-  private boolean handleConnect(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+  private boolean handleConnect(HttpServletRequest req, HttpServletResponse resp) {
     Meteor m = Meteor.build(req).addListener(channelManager);
-    AtmosphereResource r =m.getAtmosphereResource();
+    // TODO do we really need to do this?
     if (MIME_TYPE_COMET.equals(req.getContentType())){
       resp.setContentType("application/comet;charset=utf8");
-//      m.getAtmosphereResource().setSerializer(getCometSerializer());
     }
-    // Make sure we write an empty message
-    //resp.getWriter().write("[ \"\" ]\n");
+
     Broadcaster b = channelManager.getBroadcaster();
     m.setBroadcaster(b);
     m.resumeOnBroadcast(m.transport() == LONG_POLLING);
