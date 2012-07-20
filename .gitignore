@@ -6,3 +6,4 @@ war/WEB-INF/deploy
 war/WEB-INF/lib/gwt-servlet.jar
 test-classes
 /gwt-unitCache
+/*.jar
