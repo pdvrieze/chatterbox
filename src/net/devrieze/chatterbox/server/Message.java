@@ -1,11 +1,13 @@
 package net.devrieze.chatterbox.server;
 
-import java.security.Principal;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
 
+import net.devrieze.chatterbox.shared.MessagePojo;
+
+
 public class Message {
-  
+
   private Long aIndex;
   
   private String aMessageBody;
@@ -14,11 +16,8 @@ public class Message {
 
   private String aSender;
 
-  public Message(long pIndex, String pMessage, Principal pSender) {
-    this.aIndex = pIndex;
-    this.aMessageBody = pMessage;
-    this.aSender = UserManager.getCurrentUserEmail(pSender); 
-    aMsgTime = Calendar.getInstance().getTimeInMillis();
+  public Message(long pIndex, String pMessage, String pSenderEmail) {
+    this(pIndex, pMessage, Calendar.getInstance().getTimeInMillis(), pSenderEmail);
   }
   
   public Message(long pIndex, String pMessageBody, long pEpoch, String pSenderEmail) {
@@ -64,6 +63,10 @@ public class Message {
 
   public String getSender() {
     return aSender;
+  }
+  
+  public MessagePojo toPojo() {
+    return new MessagePojo(aIndex, aMessageBody, aMsgTime, aSender);
   }
   
 }

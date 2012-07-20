@@ -4,6 +4,7 @@ import java.security.Principal;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 
+
 /**
  * Class representing a chat box.
  * @author pdvrieze
@@ -120,7 +121,7 @@ public class Box {
 
   public Message addMessage(String pMessageBody, Principal pSender) {
     aLastIndex=-1;
-    Message msg = new Message(getNextMsgIndex(),pMessageBody, pSender);
+    Message msg = new Message(getNextMsgIndex(),pMessageBody, UserManager.getCurrentUserEmail(pSender));
     ChatboxManager.addMessage(aBoxId, msg);
     return msg;
   }
