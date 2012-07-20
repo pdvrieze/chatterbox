@@ -12,33 +12,42 @@
 
 	<filter-mapping>
 		<filter-name>myauth</filter-name>
-		<url-pattern>/x/Chatterbox.html</url-pattern>
+		<url-pattern>/Chatterbox.html</url-pattern>
 	</filter-mapping>
 
 	<filter-mapping>
 		<filter-name>myauth</filter-name>
-		<url-pattern>/x/</url-pattern>
+		<url-pattern>/comet</url-pattern>
 	</filter-mapping>
 
 	<filter-mapping>
 		<filter-name>myauth</filter-name>
-		<url-pattern>/x/chat/*</url-pattern>
+		<url-pattern>/gwtcomet</url-pattern>
 	</filter-mapping>
 
 	<filter-mapping>
 		<filter-name>myauth</filter-name>
-		<url-pattern>/x/chat</url-pattern>
+		<url-pattern>/chat/*</url-pattern>
 	</filter-mapping>
 
-    <servlet>
-        <description>AtmosphereServlet</description>
-        <servlet-name>AtmosphereServlet</servlet-name>
-        <servlet-class>org.atmosphere.cpr.AtmosphereServlet</servlet-class>
-        <init-param>
-            <!-- prevent deadlocks -->
-            <param-name>org.atmosphere.disableOnStateEvent</param-name>
-            <param-value>true</param-value>
-        </init-param>
+	<filter-mapping>
+		<filter-name>myauth</filter-name>
+		<url-pattern>/chat</url-pattern>
+	</filter-mapping>
+
+	<servlet>
+		<description>AtmosphereServlet</description>
+		<servlet-name>AtmosphereServlet</servlet-name>
+		<servlet-class>org.atmosphere.cpr.AtmosphereServlet</servlet-class>
+		<init-param>
+			<!-- prevent deadlocks -->
+			<param-name>org.atmosphere.disableOnStateEvent</param-name>
+			<param-value>true</param-value>
+		</init-param>
+		<init-param>
+			<param-name>org.atmosphere.cpr.broadcasterCacheClass</param-name>
+			<param-value>org.atmosphere.cache.HeaderBroadcasterCache</param-value>
+		</init-param>
         <!--        <init-param>
             <param-name>org.atmosphere.useWebSocket</param-name>
             <param-value>true</param-value>
@@ -51,9 +60,9 @@
             <param-name>org.atmosphere.useBlocking</param-name>
             <param-value>true</param-value>
         </init-param>-->
-        <load-on-startup>1</load-on-startup>
-        <!--Uncomment if you want to use Servlet 3.0 Async Support-->
-    </servlet>
+  	<load-on-startup>1</load-on-startup>
+	  <!--Uncomment if you want to use Servlet 3.0 Async Support -->
+  </servlet>
 
 
 	<servlet>
