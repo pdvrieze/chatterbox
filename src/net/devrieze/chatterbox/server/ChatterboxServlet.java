@@ -33,8 +33,6 @@ public class ChatterboxServlet extends HttpServlet {
   private static final Object MIME_TYPE_COMET = "application/comet";
 
   private ChannelManager channelManager = new ChannelManager();
-
-  private CometSerializer aCometSerializer;
   
   private static enum Method {
     GET,
@@ -410,14 +408,6 @@ public class ChatterboxServlet extends HttpServlet {
     m.resumeOnBroadcast(m.transport() == LONG_POLLING);
     m.suspend(-1,false);
     return true;
-  }
-
-  
-  private CometSerializer getCometSerializer() {
-    if (aCometSerializer == null) {
-      aCometSerializer = new CometSerializer();
-    }
-    return aCometSerializer;
   }
 
   private boolean handleUserInfo(HttpServletRequest req, HttpServletResponse resp) throws IOException {

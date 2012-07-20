@@ -23,15 +23,17 @@ public abstract class ResultSetAdapter<T> implements Iterable<T> {
     }
 
     private void init() {
-      try {
-        aResultSet.beforeFirst();
-        ResultSetMetaData metadata = aResultSet.getMetaData();
-        for (int i = 1; i <= metadata.getColumnCount(); ++i) {
-          doRegisterColumn(i, metadata.getColumnName(i));
+      if (aResultSet!=null) {
+        try {
+          aResultSet.beforeFirst();
+          ResultSetMetaData metadata = aResultSet.getMetaData();
+          for (int i = 1; i <= metadata.getColumnCount(); ++i) {
+            doRegisterColumn(i, metadata.getColumnName(i));
+          }
+          aInitialized = true;
+        } catch (SQLException e) {
+          throw new RuntimeException(e);
         }
-        aInitialized = true;
-      } catch (SQLException e) {
-        throw new RuntimeException(e);
       }
     }
 
@@ -42,9 +44,9 @@ public abstract class ResultSetAdapter<T> implements Iterable<T> {
     @Override
     public final boolean hasNext() {
       if (! aInitialized ) { init(); }
-      aPeeked = true;
       try {
-        return aResultSet.next();
+        aPeeked = aResultSet!=null && aResultSet.next();
+        return aPeeked;
       } catch (SQLException e) {
         throw new RuntimeException(e);
       }
@@ -55,7 +57,7 @@ public abstract class ResultSetAdapter<T> implements Iterable<T> {
       if (! aInitialized ) { init(); }
       try {
         if (!aPeeked) {
-          if (!aResultSet.next()) {
+          if (aResultSet==null || !aResultSet.next()) {
             throw new IllegalStateException("Trying to go beyond the last element");
           }
         }

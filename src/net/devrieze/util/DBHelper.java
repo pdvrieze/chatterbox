@@ -4,6 +4,8 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -35,6 +37,10 @@ public class DBHelper {
   public PreparedStatement aSQL;
   private Connection aConnection;
   public boolean aValid;
+  
+  private static Object aShareLock = new Object();
+  private static boolean aShareConnections = true;
+  private volatile static Map<String, DataSource> aConnectionShare;
 
 
   private class DBStatementImpl implements DBStatement {
@@ -289,14 +295,27 @@ public class DBHelper {
   }
   
   public static DBHelper dbHelper(String pResourceName) {
-    InitialContext initialContext;
-    try {
-      initialContext = new InitialContext();
-      return new DBHelper((DataSource) initialContext.lookup(pResourceName));
-    } catch (NamingException e) {
-      logException("Failure to register access permission in database", e);
-      return new DBHelper(null); // Return an empty helper to ensure building doesn't fail stuff
+    if (aConnectionShare==null) {
+      synchronized (aShareLock) {
+        if (aConnectionShare==null) {
+          aConnectionShare = new ConcurrentHashMap<String, DataSource>();
+        }
+      }
     }
+    DataSource dataSource = aConnectionShare.get(pResourceName); 
+    if (dataSource==null) {
+      try {
+        InitialContext initialContext = new InitialContext();
+        dataSource = (DataSource) initialContext.lookup(pResourceName);
+      } catch (NamingException e) {
+        logException("Failure to register access permission in database", e);
+        return new DBHelper(null); // Return an empty helper to ensure building doesn't fail stuff
+      }
+      aConnectionShare.put(pResourceName, dataSource);
+    }
+    
+    return new DBHelper(dataSource);
+    
   }
 
   public static void logWarning(String pMsg) {

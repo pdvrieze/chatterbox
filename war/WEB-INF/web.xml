@@ -86,7 +86,7 @@
 		<url-pattern>/chat/connect</url-pattern>
 	</servlet-mapping>-->
   <servlet-mapping>
-    <servlet-name>MeteorServlet</servlet-name>
+    <servlet-name>AtmosphereServlet</servlet-name>
     <url-pattern>/gwtcomet</url-pattern>
   </servlet-mapping>
 

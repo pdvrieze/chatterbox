@@ -5,6 +5,7 @@ import java.util.Arrays;
 
 import org.atmosphere.cpr.Broadcaster;
 import org.atmosphere.cpr.BroadcasterFactory;
+import org.atmosphere.gwt.server.AtmosphereGwtHandler;
 import org.atmosphere.websocket.WebSocketEventListenerAdapter;
 import org.mortbay.util.ajax.JSON;
 
@@ -28,6 +29,11 @@ public class ChannelManager extends WebSocketEventListenerAdapter {
     
     if (aBroadCaster!=null) {
       aBroadCaster.broadcast(message.toXML().toString());
+    }
+    
+    Broadcaster gwtBroadCaster = BroadcasterFactory.getDefault().lookup(MyGWTCometHandler.BROADCASTERNAME, true);
+    if (gwtBroadCaster!=null) {
+      gwtBroadCaster.broadcast(message.toXML().toString());
     }
     
     return message;
