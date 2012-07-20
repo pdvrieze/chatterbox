@@ -44,6 +44,7 @@ public class ChatterboxUI extends Composite implements UpdateMessageEvent.Handle
   @UiField MyStyle style;
 
   @UiField Button sendButton;
+  @UiField Button toggleChannel;
   @UiField Label errorLabel;
   @UiField TextBox textBox;
   @UiField DivElement outputdiv;
@@ -63,7 +64,7 @@ public class ChatterboxUI extends Composite implements UpdateMessageEvent.Handle
     eventBus.addHandler(UpdateMessageEvent.TYPE, this);
     eventBus.addHandler(StatusEvent.TYPE, this);
 
-    messageQueue = new ChatterBoxQueue(eventBus, false);
+    messageQueue = new ChatterBoxQueue(eventBus, true);
     messageQueue.requestMessages();
   }
 
@@ -78,12 +79,18 @@ public class ChatterboxUI extends Composite implements UpdateMessageEvent.Handle
 
   @UiHandler("sendButton")
   void handleClick(ClickEvent e) {
+    errorLabel.setText(""); // Reset status updates before sending
     sendMessage();
   }
   
   @UiHandler("toggleChannel")
   void handleChannelClick(ClickEvent e) {
     messageQueue.setUseChannel(! messageQueue.isUseChannel());
+    if (messageQueue.isUseChannel()) {
+      toggleChannel.setText("disable channel");
+    } else {
+      toggleChannel.setText("enable channel");
+    }
   }
 
   private void sendMessage() {

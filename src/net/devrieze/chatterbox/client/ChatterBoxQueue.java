@@ -67,18 +67,18 @@ public class ChatterBoxQueue implements Window.ClosingHandler{
     public void onError(Throwable pException, boolean pConnected) {
       Logger logger = Logger.getLogger(ChatterboxUI.LOGGER);
       logger.log(Level.WARNING, "Channel error", pException);
-      setUseChannel(false);
-      eventBus.fireEventFromSource(new StatusEvent(StatusLevel.WARNING, "channel error: "+pException.getMessage()+"<br />\n"),ChatterBoxQueue.this);
+//      setUseChannel(false);
+      eventBus.fireEventFromSource(new StatusEvent(StatusLevel.WARNING, "channel error: "+pException.getMessage()+"\n"),ChatterBoxQueue.this);
     }
 
     @Override
     public void onHeartbeat() {
-      // Ignore
+      eventBus.fireEventFromSource(new StatusEvent(StatusLevel.DEBUG, "channel heartbeat"),ChatterBoxQueue.this);
     }
 
     @Override
     public void onRefresh() {
-      // ignore
+      eventBus.fireEventFromSource(new StatusEvent(StatusLevel.DEBUG, "channel refresh"),ChatterBoxQueue.this);
     }
 
     @Override

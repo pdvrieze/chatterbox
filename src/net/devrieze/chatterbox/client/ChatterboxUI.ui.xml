@@ -110,6 +110,10 @@
     	padding-right: 0.25em;
     }
     
+    .errorLabel {
+	    overflow: hidden;
+	  }
+    
   </ui:style>
   <g:HTMLPanel>
     <div id="main">
@@ -118,7 +122,7 @@
     </div>
      <div id="header">
        <div id="headborder">
-         <div class="{style.title}">ChatterBox (<a ui:field='logoutRef' href="/chat/logout">logout</a>)<span style="float:right"><g:Button text="toggle channel" ui:field='toggleChannel'></g:Button></span></div>
+         <div class="{style.title}">ChatterBox (<a ui:field='logoutRef' href="/chat/logout">logout</a>)<span style="float:right"><g:Button text="disable channel" ui:field='toggleChannel'></g:Button></span></div>
          <div id="errorLabelContainer"><g:Label ui:field='errorLabel' addStyleNames="{style.errorLabel}"></g:Label></div>
        </div>
      </div>
