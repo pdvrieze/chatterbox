@@ -18,6 +18,15 @@ public class Message {
     this.content = content;
   }
 
+  public Message(int index, long epoch, NodeList content) {
+    this.index = index;
+    if (this.index<0) {
+      throw new IllegalArgumentException("Index can not be smaller than zero");
+    }
+    this.epoch = epoch;
+    this.content = content;
+  }
+
   public int getIndex() {
     return index;
   }
