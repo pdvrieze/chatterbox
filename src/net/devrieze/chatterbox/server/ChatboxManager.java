@@ -137,6 +137,8 @@ public class ChatboxManager {
 
   private static final String COL_TOKENNAME = "`name`";
 
+  private static final String SQL_REMOVE_TOKEN = "DELETE FROM "+TABLE_TOKENS+" WHERE "+COL_TOKENNAME+" = ?";
+
   private static final String SQL_GET_TOKENS = "SELECT "+COL_TOKENNAME+" FROM "+TABLE_TOKENS;
 
   private static final String COL_TOKENID = "`tokenId`";
@@ -350,6 +352,13 @@ public class ChatboxManager {
         .addParam(2, pBoxOwner)
         .execCommit();
     return getBox(pBoxName);
+  }
+
+  public static void removeAuthToken(String pToken) {
+    dbHelper(DB_RESOURCE)
+        .makeQuery(SQL_REMOVE_TOKEN)
+        .addParam(1, pToken)
+        .execCommit();
   }
 
 }
