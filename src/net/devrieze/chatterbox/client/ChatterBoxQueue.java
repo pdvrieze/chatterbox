@@ -3,41 +3,30 @@ package net.devrieze.chatterbox.client;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import org.atmosphere.gwt.client.AtmosphereClient;
+import org.atmosphere.gwt.client.AtmosphereGWTSerializer;
 import org.atmosphere.gwt.client.AtmosphereListener;
+import org.atmosphere.gwt.client.SerialTypes;
 
 import net.devrieze.chatterbox.client.StatusEvent.StatusLevel;
+import net.devrieze.chatterbox.shared.MessagePojo;
 
 import com.google.gwt.core.client.GWT;
 import com.google.gwt.event.shared.EventBus;
-import com.google.gwt.http.client.Request;
-import com.google.gwt.http.client.RequestBuilder;
-import com.google.gwt.http.client.RequestCallback;
-import com.google.gwt.http.client.RequestException;
-import com.google.gwt.http.client.Response;
-import com.google.gwt.user.client.Timer;
+import com.google.gwt.http.client.*;
 import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.Window.ClosingEvent;
-import com.google.gwt.xml.client.Document;
-import com.google.gwt.xml.client.Element;
-import com.google.gwt.xml.client.Node;
-import com.google.gwt.xml.client.NodeList;
-import com.google.gwt.xml.client.Text;
-import com.google.gwt.xml.client.XMLParser;
+import com.google.gwt.xml.client.*;
 import com.google.gwt.xml.client.impl.DOMParseException;
 
 
 public class ChatterBoxQueue implements Window.ClosingHandler{
 
-  private final class ChannelSocketListener implements AtmosphereListener {
-    
+  @SerialTypes({MessagePojo.class})
+  public abstract static class MessageDeserializer extends AtmosphereGWTSerializer { /* Extension point does not need implementation */ }
 
-    public void onClose() {
-      eventBus.fireEventFromSource(new StatusEvent(StatusLevel.INFO, "channel closed"),ChatterBoxQueue.this);
-    }
+  private final class ChannelSocketListener implements AtmosphereListener {
 
     @Override
     public void onConnected(int pHeartbeat, int pConnectionID) {
@@ -65,10 +54,8 @@ public class ChatterBoxQueue implements Window.ClosingHandler{
 
     @Override
     public void onError(Throwable pException, boolean pConnected) {
-      Logger logger = Logger.getLogger(ChatterboxUI.LOGGER);
-      logger.log(Level.WARNING, "Channel error", pException);
 //      setUseChannel(false);
-      eventBus.fireEventFromSource(new StatusEvent(StatusLevel.WARNING, "channel error: "+pException.getMessage()+"\n"),ChatterBoxQueue.this);
+//      eventBus.fireEventFromSource(new StatusEvent(StatusLevel.WARNING, "channel error: "+pException.getMessage()+"\n"),ChatterBoxQueue.this);
     }
 
     @Override
@@ -88,9 +75,7 @@ public class ChatterBoxQueue implements Window.ClosingHandler{
 
     @Override
     public void onMessage(List<? extends Serializable> pMessages) {
-      for (Serializable message: pMessages) {
-        handleMessagesReceived(message.toString());
-      }
+      handleMessagesReceived(pMessages);
       eventBus.fireEventFromSource(new StatusEvent(StatusLevel.DEBUG, "Received channel messages (#"+pMessages.size()+")"),ChatterBoxQueue.this);
     }
   }
@@ -125,6 +110,28 @@ public class ChatterBoxQueue implements Window.ClosingHandler{
       handleMessagesReceived(messageText);
     }
   }
+  
+  public void handleMessagesReceived(List<?> pMessages) {
+    for (Object message: pMessages) {
+      if (message instanceof CharSequence) {
+        handleMessagesReceived(message.toString());
+      } else if (message instanceof List) {
+        handleMessagesReceived((List<?>) message);
+      } else if (message instanceof MessagePojo) {
+        handleMessageReceived((MessagePojo) message);
+      }
+    }
+    
+  }
+  
+  public void handleMessageReceived(MessagePojo message) {
+    // We need to wrap it into a temporary root node to be able to get a node list
+    Node body = getRootElement(XMLParser.parse("<root>"+message.getMessageBody()+"</root>"));
+
+    Message m = new Message(message.getIndex().intValue(), message.getMsgTime(), body.getChildNodes());
+    addMessage(m);
+  }
+  
 
   public void handleMessagesReceived(String messageText) {
     Document message;
@@ -323,14 +330,18 @@ public class ChatterBoxQueue implements Window.ClosingHandler{
   private void disconnectFromChannel() {
     if (aAtmosphereClient!=null) {
       aAtmosphereClient.stop();
-      aAtmosphereClient=null;
+//      aAtmosphereClient=null;
     }
     
   }
 
   private void connectToChannel() {
     ChannelSocketListener listener = new ChannelSocketListener();
-    aAtmosphereClient = new AtmosphereClient(GWT.getHostPageBaseURL()+CONNECTURL, listener);
+    if (aAtmosphereClient==null) {
+      
+      AtmosphereGWTSerializer myserializer = GWT.create(MessageDeserializer.class);
+      aAtmosphereClient = new AtmosphereClient(GWT.getHostPageBaseURL()+CONNECTURL, myserializer, listener, true);
+    }
     aAtmosphereClient.start();
   }
 
