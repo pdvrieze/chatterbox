@@ -23,11 +23,6 @@ public class Message extends MessagePojo{
     
   }
   
-  @Deprecated
-  public String getMessage() {
-    return getMessageBody();
-  }
-
   public CharSequence toXML() {
     final String messageBody = getMessageBody();
     // Capacity estimated to 40 characters plus message length

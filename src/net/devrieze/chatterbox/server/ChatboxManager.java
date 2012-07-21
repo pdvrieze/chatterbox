@@ -291,7 +291,7 @@ public class ChatboxManager {
           .addParam(1, pBoxId)
           .addParam(2, newIndex)
           .addParam(3, pMsg.getSender())
-          .addParam(4, pMsg.getMessage())
+          .addParam(4, pMsg.getMessageBody())
           .addParam(5, pMsg.getMsgTime())
           .execCommit()) {
         long idx2 = 1+helper.makeQuery(SQL_GET_LAST_INDEX, "Could not determine the last message")
