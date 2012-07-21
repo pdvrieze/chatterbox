@@ -103,6 +103,10 @@ public class AuthFilter implements Filter {
     }
   }
 
+  /**
+   * Get the login url that will forward the user to the requested page.
+   * @param pRequestURI The url to forward to.
+   */
   private String getLoginURL(String pRequestURI) {
     return "";
   }

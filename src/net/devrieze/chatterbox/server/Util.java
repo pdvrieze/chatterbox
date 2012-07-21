@@ -1,6 +1,5 @@
 package net.devrieze.chatterbox.server;
 
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -138,6 +137,7 @@ public final class Util {
   }
 
   private static int sanitizeHtml(int startPos, StringBuilder result, String closeTag, CharSequence orig) {
+    // TODO use proper html parser, and then sanitize based on the parsing from the parser
     int pos = startPos;
     char c;
     for (pos = startPos; pos < orig.length(); ++pos) {
