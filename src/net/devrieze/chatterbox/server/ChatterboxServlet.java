@@ -8,6 +8,7 @@ import java.security.Principal;
 
 import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
+import javax.servlet.ServletRequest;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -121,7 +122,7 @@ public class ChatterboxServlet extends HttpServlet {
       public boolean handle(ChatterboxServlet servlet, Method method, HttpServletRequest req, HttpServletResponse resp) throws IOException {
         switch (method) {
           case GET:
-            return servlet.handleBoxes(resp);
+            return servlet.handleBoxes(req, resp);
           default:
             return false;
         }
@@ -206,10 +207,10 @@ public class ChatterboxServlet extends HttpServlet {
     }
   }
 
-  private Box getDefaultBox() {
-    Box result = ChatboxManager.getBox(DEFAULT_BOX);
+  private Box getDefaultBox(ServletRequest pKey) {
+    Box result = ChatboxManager.getBox(DEFAULT_BOX, pKey);
     if (result==null) { 
-      result = ChatboxManager.createBox(DEFAULT_BOX, DEFAULT_OWNER);
+      result = ChatboxManager.createBox(DEFAULT_BOX, DEFAULT_OWNER, pKey);
     }
     return result;
   }
@@ -236,7 +237,7 @@ public class ChatterboxServlet extends HttpServlet {
         read = in.read(buffer);
       }
     }
-    Message m = channelManager.createNewMessageAndNotify(Util.sanitizeHtml(message.toString()), req.getUserPrincipal());
+    Message m = channelManager.createNewMessageAndNotify(Util.sanitizeHtml(message.toString()), req.getUserPrincipal(), req);
     resp.getWriter().append("<?xml version=\"1.0\"?>\n").append(m.toXML());
     resp.setStatus(HttpServletResponse.SC_OK);
     return true;
@@ -251,7 +252,7 @@ public class ChatterboxServlet extends HttpServlet {
     PrintWriter out = resp.getWriter();
     out.append("<?xml version=\"1.0\"?>\n");
     out.append("<authTokens>\n");
-    for(String s:ChatboxManager.getAuthTokens()){
+    for(String s:ChatboxManager.getAuthTokens(pReq)){
       out.append("  <authToken>").append(s).append("</authToken>\n");
     }
     out.append("</authTokens>");
@@ -273,7 +274,7 @@ public class ChatterboxServlet extends HttpServlet {
         notFound= true;
       } else {
         token = token.substring(1);
-        notFound = ! ChatboxManager.isValidToken(token);
+        notFound = ! ChatboxManager.isValidToken(token, req);
       }
     }
     
@@ -281,7 +282,7 @@ public class ChatterboxServlet extends HttpServlet {
       resp.setStatus(HttpServletResponse.SC_NOT_FOUND);
       return true;
     } else {
-      ChatboxManager.removeAuthToken(token);
+      ChatboxManager.removeAuthToken(token, req);
       handleGetAuthTokens(req, resp);
       return true;
     }
@@ -328,7 +329,7 @@ public class ChatterboxServlet extends HttpServlet {
       out.print("<messages name=\"");
       Box b;
       try {
-        b = getDefaultBox();
+        b = getDefaultBox(req);
         out.print(Util.encodeHtml(b.getName()));
       } finally {
         out.println("\">");
@@ -369,13 +370,13 @@ public class ChatterboxServlet extends HttpServlet {
     return true;
   }
 
-  private boolean handleBoxes(HttpServletResponse resp) throws IOException {
-    resp.setContentType("text/xml; charset=utf-8");
-    PrintWriter out = resp.getWriter();
+  private boolean handleBoxes(HttpServletRequest pReq, HttpServletResponse pResp) throws IOException {
+    pResp.setContentType("text/xml; charset=utf-8");
+    PrintWriter out = pResp.getWriter();
     out.println("<?xml version=\"1.0\"?>");
     out.println("<boxes>");
     try {
-      for (Box b:ChatboxManager.getBoxes()) {
+      for (Box b:ChatboxManager.getBoxes(pReq)) {
         out.print("  <box");
         final CharSequence name = b.getName();
         if (DEFAULT_BOX.equals(name)) {
@@ -388,12 +389,12 @@ public class ChatterboxServlet extends HttpServlet {
     } finally {
       out.println("</boxes>");
     }
-    resp.setStatus(HttpServletResponse.SC_OK);
+    pResp.setStatus(HttpServletResponse.SC_OK);
     return true;
   }
 
-  private boolean handleClear(HttpServletRequest req, HttpServletResponse resp) throws IOException {
-    return handleClear(req, resp, getDefaultBox());
+  private boolean handleClear(HttpServletRequest pReq, HttpServletResponse pResp) throws IOException {
+    return handleClear(pReq, pResp, getDefaultBox(pReq));
   }  
   
   private boolean handleClear(HttpServletRequest pReq, HttpServletResponse resp, Box pBox) throws IOException {

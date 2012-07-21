@@ -34,7 +34,7 @@ public class ChatterboxUI extends Composite implements UpdateMessageEvent.Handle
 
   private EventBus eventBus = new SimpleEventBus();
 
-  interface ChatterboxBinder extends UiBinder<Widget, ChatterboxUI> {}
+  interface ChatterboxBinder extends UiBinder<Widget, ChatterboxUI> { /* Needed by GWT */ }
   private static ChatterboxBinder uiBinder = GWT.create(ChatterboxBinder.class);
 
   interface MyStyle extends CssResource {
@@ -78,13 +78,13 @@ public class ChatterboxUI extends Composite implements UpdateMessageEvent.Handle
   }
 
   @UiHandler("sendButton")
-  void handleClick(ClickEvent e) {
+  void handleClick(@SuppressWarnings("unused") ClickEvent e) {
     errorLabel.setText(""); // Reset status updates before sending
     sendMessage();
   }
   
   @UiHandler("toggleChannel")
-  void handleChannelClick(ClickEvent e) {
+  void handleChannelClick(@SuppressWarnings("unused") ClickEvent e) {
     messageQueue.setUseChannel(! messageQueue.isUseChannel());
     if (messageQueue.isUseChannel()) {
       toggleChannel.setText("disable channel");

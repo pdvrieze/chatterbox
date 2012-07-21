@@ -16,7 +16,15 @@ import javax.sql.DataSource;
 
 public class DBHelper {
   
-  
+  private static class DataSourceWrapper {
+    DataSource aDataSource;
+    ConcurrentHashMap<Object, Connection> aConnectionMap;
+    
+    DataSourceWrapper(DataSource pDataSource) {
+      aDataSource = pDataSource;
+      aConnectionMap = new ConcurrentHashMap<>(5);
+    }
+  }
   
   
   
@@ -36,11 +44,12 @@ public class DBHelper {
   public String aErrorMsg;
   public PreparedStatement aSQL;
   private Connection aConnection;
+  private Object aKey;
   public boolean aValid;
   
   private static Object aShareLock = new Object();
-  private static boolean aShareConnections = true;
-  private volatile static Map<String, DataSource> aConnectionShare;
+  private static final boolean SHARE_CONNECTIONS = true;
+  private volatile static Map<String, DataSourceWrapper> aSourceMap;
 
 
   private class DBStatementImpl implements DBStatement {
@@ -52,8 +61,14 @@ public class DBHelper {
 
     DBStatementImpl(String pSQL, String pErrorMsg) throws SQLException {
       if (DBHelper.this.aConnection==null) {
-        DBHelper.this.aConnection = aDataSource.getConnection();
-        DBHelper.this.aConnection.setAutoCommit(false);
+        if (SHARE_CONNECTIONS) {
+          DBHelper.this.aConnection = aDataSource.aConnectionMap.get(DBHelper.this.aKey);
+        }
+        if (DBHelper.this.aConnection==null) {
+          DBHelper.this.aConnection = aDataSource.aDataSource.getConnection();
+          DBHelper.this.aConnection.setAutoCommit(false);
+          aDataSource.aConnectionMap.put(DBHelper.this.aKey, DBHelper.this.aConnection);
+        }
       }
       DBHelper.this.aSQL=aConnection.prepareStatement(pSQL);
       DBHelper.this.aErrorMsg=pErrorMsg;
@@ -287,34 +302,35 @@ public class DBHelper {
   }
 
 
-  private final DataSource aDataSource;
+  private final DataSourceWrapper aDataSource;
 
-  private DBHelper(DataSource pDataSource) {
+  private DBHelper(DataSourceWrapper pDataSource, Object pKey) {
     aDataSource = pDataSource;
+    aKey = pKey!=null ? pKey : new Object();
     aValid=true;
   }
   
-  public static DBHelper dbHelper(String pResourceName) {
-    if (aConnectionShare==null) {
+  public static DBHelper dbHelper(String pResourceName, Object pKey) {
+    if (aSourceMap==null) {
       synchronized (aShareLock) {
-        if (aConnectionShare==null) {
-          aConnectionShare = new ConcurrentHashMap<String, DataSource>();
+        if (aSourceMap==null) {
+          aSourceMap = new ConcurrentHashMap<String, DataSourceWrapper>();
         }
       }
     }
-    DataSource dataSource = aConnectionShare.get(pResourceName); 
+    DataSourceWrapper dataSource = aSourceMap.get(pResourceName); 
     if (dataSource==null) {
       try {
         InitialContext initialContext = new InitialContext();
-        dataSource = (DataSource) initialContext.lookup(pResourceName);
+        dataSource = new DataSourceWrapper((DataSource) initialContext.lookup(pResourceName));
+        aSourceMap.put(pResourceName, dataSource);
       } catch (NamingException e) {
         logException("Failure to register access permission in database", e);
-        return new DBHelper(null); // Return an empty helper to ensure building doesn't fail stuff
+        return new DBHelper(null, pKey); // Return an empty helper to ensure building doesn't fail stuff
       }
-      aConnectionShare.put(pResourceName, dataSource);
     }
     
-    return new DBHelper(dataSource);
+    return new DBHelper(dataSource, pKey);
     
   }
 
@@ -382,6 +398,18 @@ public class DBHelper {
       aConnection.rollback();
     } catch (SQLException e) {
       logException("Failure to roll back statement", e);
+    }
+  }
+
+  public void close() throws SQLException {
+    if (aConnection!=null) { aConnection.close(); }
+    else if (aDataSource!=null) {
+      aConnection = aDataSource.aConnectionMap.get(aKey);
+      if (aConnection!=null) { aConnection.close(); }
+    }
+    aConnection = null;
+    if (aDataSource !=null) {
+      aDataSource.aConnectionMap.remove(aKey);
     }
   }
 

@@ -3,17 +3,15 @@ package net.devrieze.chatterbox.server;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.security.Principal;
+import java.sql.SQLException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import javax.servlet.Filter;
-import javax.servlet.FilterChain;
-import javax.servlet.FilterConfig;
-import javax.servlet.ServletException;
-import javax.servlet.ServletRequest;
-import javax.servlet.ServletResponse;
+import javax.servlet.*;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+
+import net.devrieze.util.DBHelper;
 
 
 public class AuthFilter implements Filter {
@@ -55,7 +53,7 @@ public class AuthFilter implements Filter {
     }
 
     if (principal!=null) {
-      if (isAllowed(principal)) {
+      if (isAllowed(principal, req)) {
         filterChain.doFilter(req, resp);
         return;
       } else {
@@ -63,8 +61,8 @@ public class AuthFilter implements Filter {
         if ("POST".equals(req.getMethod())){
           String token = req.getParameter("key");
           if (token!=null && token.length()>0) {
-            if (ChatboxManager.isValidToken(token)) {
-              addAllowedUser(principal);
+            if (ChatboxManager.isValidToken(token, req)) {
+              addAllowedUser(principal, req);
               resp.sendRedirect(resp.encodeRedirectURL(req.getRequestURI()));
               return;
             } else {
@@ -109,18 +107,24 @@ public class AuthFilter implements Filter {
     return "";
   }
   
-  private static void addAllowedUser(Principal principal) {
-    UserManager.addAllowedUser(principal);
+  private static void addAllowedUser(Principal principal, ServletRequest pKey) {
+    UserManager.addAllowedUser(principal, pKey);
   }
 
-  private static boolean isAllowed(Principal principal) {
-    return UserManager.isAllowedUser(principal);
+  private static boolean isAllowed(Principal principal, ServletRequest pKey) {
+    return UserManager.isAllowedUser(principal, pKey);
   }
 
   @Override
   public void init(FilterConfig arg0) throws ServletException {
     this.filterConfig = arg0;
-    ChatboxManager.ensureTables();
+    Object dbKey = new Object();
+    ChatboxManager.ensureTables(dbKey);
+    try {
+      DBHelper.dbHelper(UserManager.RESOURCE_REF, dbKey).close();
+    } catch (SQLException e) {
+      throw new ServletException(e);
+    }
   }
 
 }

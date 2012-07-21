@@ -1,18 +1,15 @@
 package net.devrieze.chatterbox.server;
 
 import java.security.Principal;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 
+import javax.servlet.ServletRequest;
 import javax.sql.DataSource;
 
 import static net.devrieze.util.DBHelper.*;
 
-import net.devrieze.util.DBHelper;
-
 public class UserManager {
   
-  private static final String RESOURCE_REF = "java:/comp/env/jdbc/webauth";
+  static final String RESOURCE_REF = "java:/comp/env/jdbc/webauth";
 
   private static final String APPNAME = "chatterbox";
 
@@ -32,15 +29,15 @@ public class UserManager {
 
   static DataSource aDataSource;
 
-  public static void addAllowedUser(Principal pPrincipal) {
-    dbHelper(RESOURCE_REF).makeInsert(SQL_ADD_APP_PERM, "Failure to register access permission in database")
+  public static void addAllowedUser(Principal pPrincipal, ServletRequest pKey) {
+    dbHelper(RESOURCE_REF, pKey).makeInsert(SQL_ADD_APP_PERM, "Failure to register access permission in database")
           .addParam(SQL_I_ADD_APP_PERM_COL_USER, pPrincipal.getName())
           .addParam(SQL_I_ADD_APP_PERM_COL_APPNAME, APPNAME)
           .execCommit();
   }
 
-  public static boolean isAllowedUser(Principal pPrincipal) {
-    final boolean result = dbHelper(RESOURCE_REF).makeQuery(SQL_CHECK_APP_PERM, "Failure to verify access permission in database")
+  public static boolean isAllowedUser(Principal pPrincipal, ServletRequest pKey) {
+    final boolean result = dbHelper(RESOURCE_REF, pKey).makeQuery(SQL_CHECK_APP_PERM, "Failure to verify access permission in database")
           .addParam(SQL_I_CHECK_APP_PERM_COL_USER, pPrincipal.getName())
           .addParam(SQL_I_CHECK_APP_PERM_COL_APPNAME, APPNAME)
           .execQueryNotEmpty();
