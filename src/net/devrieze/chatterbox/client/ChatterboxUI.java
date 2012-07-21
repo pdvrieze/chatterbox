@@ -1,7 +1,6 @@
 package net.devrieze.chatterbox.client;
 
 import net.devrieze.chatterbox.client.StatusEvent.StatusLevel;
-import net.devrieze.chatterbox.shared.FieldVerifier;
 
 import com.google.gwt.core.client.GWT;
 import com.google.gwt.dom.client.AnchorElement;
@@ -18,11 +17,7 @@ import com.google.gwt.uibinder.client.UiBinder;
 import com.google.gwt.uibinder.client.UiField;
 import com.google.gwt.uibinder.client.UiHandler;
 import com.google.gwt.user.client.Window;
-import com.google.gwt.user.client.ui.Button;
-import com.google.gwt.user.client.ui.Composite;
-import com.google.gwt.user.client.ui.Label;
-import com.google.gwt.user.client.ui.TextBox;
-import com.google.gwt.user.client.ui.Widget;
+import com.google.gwt.user.client.ui.*;
 
 
 /**
@@ -95,7 +90,7 @@ public class ChatterboxUI extends Composite implements UpdateMessageEvent.Handle
 
   private void sendMessage() {
     String textToServer = textBox.getText();
-    if (!FieldVerifier.isValidName(textToServer)) {
+    if (textToServer.length()<4) {
       errorLabel.setText("Please enter at least four characters");
       return;
     }
