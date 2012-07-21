@@ -88,8 +88,8 @@ public class ChatterBoxQueue implements Window.ClosingHandler{
   private static final String MESSAGEPOSTBASEURL = "chat/messages";
   
   private ArrayList<Message> messages;
-  private int firstMessage = -1;
-  private int lastKnownMessage = -1;
+  private long firstMessage = -1;
+  private long lastKnownMessage = -1;
 
   private EventBus eventBus;
   private boolean useChannel;
@@ -130,11 +130,7 @@ public class ChatterBoxQueue implements Window.ClosingHandler{
   }
   
   public void handleMessageReceived(MessagePojo message) {
-    // We need to wrap it into a temporary root node to be able to get a node list
-    Node body = getRootElement(XMLParser.parse("<root>"+message.getMessageBody()+"</root>"));
-
-    Message m = new Message(message.getIndex().intValue(), message.getMsgTime(), body.getChildNodes());
-    addMessage(m);
+    addMessage(new Message(message));
   }
   
 
@@ -166,9 +162,10 @@ public class ChatterBoxQueue implements Window.ClosingHandler{
     if ("message".equals(e.getTagName())) {
       String index = e.getAttribute("index");
       String epoch = e.getAttribute("epoch");
+      String sender = e.getAttribute("sender");
       NodeList content = e.getChildNodes();
       if (index!=null) {
-        Message m = new Message(index, epoch, content);
+        Message m = new Message(index, sender, epoch, content);
         addMessage(m);
       }
     } else {
@@ -184,7 +181,7 @@ public class ChatterBoxQueue implements Window.ClosingHandler{
         firstMessage = 0;
       }
     }
-    int listPos = m.getIndex()-firstMessage;
+    int listPos = (int) (m.getIndex()-firstMessage);
     if (listPos<0) {
       moveMessages(-listPos);
       listPos = 0;
@@ -197,7 +194,7 @@ public class ChatterBoxQueue implements Window.ClosingHandler{
       }
     } else { // Append a message
       if (listPos > messages.size()) {
-        messages.ensureCapacity(listPos - firstMessage);
+        messages.ensureCapacity((int) (listPos - firstMessage));
         for(int i = messages.size(); i<listPos; ++i) {
           messages.add(null);
         }
@@ -218,33 +215,33 @@ public class ChatterBoxQueue implements Window.ClosingHandler{
     
   }
 
-  private void moveMessages(int i) {
-    if (i>0) {
-      messages.ensureCapacity(messages.size()+i);
+  private void moveMessages(int pListPos) {
+    if (pListPos>0) {
+      messages.ensureCapacity(messages.size()+pListPos);
       int oldSize = messages.size();
-      for(int j=(oldSize-i); j<oldSize; ++j) {
+      for(int j=(oldSize-pListPos); j<oldSize; ++j) {
         messages.add(messages.get(j));
       }
-      for(int j=oldSize-i-1; j>=0; j--) {
-        messages.set(j+i, messages.get(j));
+      for(int j=oldSize-pListPos-1; j>=0; j--) {
+        messages.set(j+pListPos, messages.get(j));
       }
-      for(int j=0; j<i; ++j) {
+      for(int j=0; j<pListPos; ++j) {
         messages.set(j, null);
       }
       // The head should initiate this so does not need to be requested again
       // Function is inclusive, so current firstMessage can stay
-      requestMessages(firstMessage-i+1, firstMessage-1);
-    } else if (i<0) {
-      int end = messages.size() + i;
+      requestMessages(firstMessage-pListPos+1, firstMessage-1);
+    } else if (pListPos<0) {
+      int end = messages.size() + pListPos;
       for(int j = 0; j < end; ++j) {
-        messages.set(j, messages.get(j-i));
+        messages.set(j, messages.get(j-pListPos));
       }
       while(messages.size()>end) {
         messages.remove(messages.size()-1);
       }
     }
-    firstMessage-=i;
-    fireUpdateMove(i);
+    firstMessage-=pListPos;
+    fireUpdateMove(pListPos);
   }
 
   public void requestMessages() {
@@ -257,7 +254,7 @@ public class ChatterBoxQueue implements Window.ClosingHandler{
    * @param start The first message to request.
    * @param end The last message to request.
    */
-  public void requestMessages(int start, int end) {
+  public void requestMessages(long start, long end) {
     StringBuilder requestURL= new StringBuilder();
     requestURL.append(MESSAGESBASEURL);
     char parChar = '?';

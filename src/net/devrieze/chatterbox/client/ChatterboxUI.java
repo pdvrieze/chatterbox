@@ -160,7 +160,7 @@ public class ChatterboxUI extends Composite implements UpdateMessageEvent.Handle
       } else {
         mHtml.append("<div class=\"odd\">");
       }
-      mHtml.append(m.getContent().toString());
+      mHtml.append(m.getMessageBody());
       mHtml.append("</div>");
 
     }
