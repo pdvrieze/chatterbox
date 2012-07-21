@@ -28,7 +28,7 @@ public class ChannelManager extends WebSocketEventListenerAdapter {
     
     Broadcaster gwtBroadCaster = BroadcasterFactory.getDefault().lookup(MyGWTCometHandler.BROADCASTERNAME, true);
     if (gwtBroadCaster!=null) {
-      gwtBroadCaster.broadcast(message.toPojo());
+      gwtBroadCaster.broadcast(message.pojoCopy());
     }
     
     return message;

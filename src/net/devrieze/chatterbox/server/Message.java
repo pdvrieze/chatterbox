@@ -6,67 +6,49 @@ import java.util.GregorianCalendar;
 import net.devrieze.chatterbox.shared.MessagePojo;
 
 
-public class Message {
+public class Message extends MessagePojo{
 
-  private Long aIndex;
+  private static final long serialVersionUID = 1298603868339441494L;
   
-  private String aMessageBody;
-  
-  private Long aMsgTime;
-
-  private String aSender;
+  public Message(MessagePojo pPojo) {
+    super(pPojo);
+  }
 
   public Message(long pIndex, String pMessage, String pSenderEmail) {
     this(pIndex, pMessage, Calendar.getInstance().getTimeInMillis(), pSenderEmail);
   }
   
   public Message(long pIndex, String pMessageBody, long pEpoch, String pSenderEmail) {
-    aIndex = pIndex;
-    aMessageBody = pMessageBody;
-    aMsgTime = pEpoch;
-    aSender = pSenderEmail;
+    super(pIndex, pMessageBody, pEpoch, pSenderEmail);
     
   }
-
-  public long getIndex() {
-    return aIndex;
-  }
   
+  @Deprecated
   public String getMessage() {
-    return aMessageBody;
+    return getMessageBody();
   }
 
   public CharSequence toXML() {
+    final String messageBody = getMessageBody();
     // Capacity estimated to 40 characters plus message length
-    StringBuilder result = new StringBuilder(40+aMessageBody.length()).append("<message index=\"").append(getIndex());
-    result.append("\" epoch=\"").append(aMsgTime);
+    final StringBuilder result = new StringBuilder(40+messageBody.length()).append("<message index=\"").append(getIndex());
+    result.append("\" epoch=\"").append(getMsgTime());
     if (getSender()!=null) { result.append("\" from=\"").append(Util.encodeHtml(getSender())); }
-    result.append("\">").append(aMessageBody).append("</message>\n");
+    result.append("\">").append(messageBody).append("</message>\n");
     return result;
   }
 
   @Override
   public String toString() {
-    return new StringBuilder(12+aMessageBody.length()).append(aIndex).append(": ").append(aMessageBody).toString();
-  }
-  
-  public long getMsgTime() {
-    return aMsgTime;
+    final String messageBody = getMessageBody();
+    return new StringBuilder(12+messageBody.length()).append(getIndex()).append(": ").append(messageBody).toString();
   }
   
   public GregorianCalendar getMsgDate() {
     // Explicit time so as to not to incur cost of getting current time
     GregorianCalendar calendar = new GregorianCalendar(1970, 1, 1);
-    calendar.setTimeInMillis(aMsgTime);
+    calendar.setTimeInMillis(getMsgTime());
     return calendar;
-  }
-
-  public String getSender() {
-    return aSender;
-  }
-  
-  public MessagePojo toPojo() {
-    return new MessagePojo(aIndex, aMessageBody, aMsgTime, aSender);
   }
   
 }

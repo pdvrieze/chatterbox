@@ -1,9 +1,6 @@
 package net.devrieze.chatterbox.shared;
 
 import java.io.Serializable;
-import java.security.Principal;
-import java.util.Calendar;
-import java.util.GregorianCalendar;
 
 
 public class MessagePojo implements Serializable{
@@ -32,6 +29,10 @@ public class MessagePojo implements Serializable{
   }
 
 
+  public MessagePojo(MessagePojo pPojo) {
+    this(pPojo.aIndex, pPojo.aMessageBody, pPojo.aMsgTime, pPojo.aSender);
+  }
+
   public Long getIndex() {
     return aIndex;
   }
@@ -49,4 +50,8 @@ public class MessagePojo implements Serializable{
     return aSender;
   }
   
+  public MessagePojo pojoCopy() {
+    return new MessagePojo(this);
+  }
+
 }
