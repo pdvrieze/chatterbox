@@ -11,6 +11,7 @@ import java.util.logging.Logger;
 
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
+import javax.servlet.http.HttpServletRequest;
 import javax.sql.DataSource;
 
 
@@ -411,6 +412,25 @@ public class DBHelper {
     if (aDataSource !=null) {
       aDataSource.aConnectionMap.remove(aKey);
     }
+  }
+
+  public static void closeConnections(HttpServletRequest pReq) {
+    synchronized (aShareLock) {
+      for(DataSourceWrapper dataSource: aSourceMap.values()) {
+        Connection conn = dataSource.aConnectionMap.get(pReq);
+        if (conn !=null) {
+          try {
+            conn.close();
+          } catch (SQLException e) {
+            logException("Failure to close connection", e);
+          }
+          dataSource.aConnectionMap.remove(pReq);
+        } 
+      }
+    }
+    // TODO Auto-generated method stub
+    // 
+    throw new UnsupportedOperationException("Not yet implemented");
   }
 
 }

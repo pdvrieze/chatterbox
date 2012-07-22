@@ -18,6 +18,8 @@ import org.atmosphere.cpr.Meteor;
 
 import static org.atmosphere.cpr.AtmosphereResource.TRANSPORT.*;
 
+import net.devrieze.util.DBHelper;
+
 
 public class ChatterboxServlet extends HttpServlet {
 
@@ -166,7 +168,9 @@ public class ChatterboxServlet extends HttpServlet {
       resp.sendError(HttpServletResponse.SC_NOT_FOUND);
       return;
     }
-    if (! t.handle(this, Method.GET, req, resp)) {
+    if (t.handle(this, Method.GET, req, resp)) {
+      DBHelper.closeConnections(req);
+    } else {
       super.doGet(req, resp);
     }
   }
@@ -178,7 +182,9 @@ public class ChatterboxServlet extends HttpServlet {
       resp.sendError(HttpServletResponse.SC_NOT_FOUND);
       return;
     }
-    if ((! t.handle(this, Method.POST, req, resp))) {
+    if ((t.handle(this, Method.POST, req, resp))) {
+      DBHelper.closeConnections(req);
+    } else {
       super.doPost(req, resp);
     }
   }
@@ -190,7 +196,9 @@ public class ChatterboxServlet extends HttpServlet {
       resp.sendError(HttpServletResponse.SC_NOT_FOUND);
       return;
     }
-    if ((! t.handle(this, Method.DELETE, req, resp))) {
+    if ((t.handle(this, Method.DELETE, req, resp))) {
+      DBHelper.closeConnections(req);
+    } else {
       super.doDelete(req, resp);
     }
   }
@@ -202,7 +210,9 @@ public class ChatterboxServlet extends HttpServlet {
       resp.sendError(HttpServletResponse.SC_NOT_FOUND);
       return;
     }
-    if ((! t.handle(this, Method.PUT, req, resp))) {
+    if ((t.handle(this, Method.PUT, req, resp))) {
+      DBHelper.closeConnections(req);
+    } else {
       super.doPut(req, resp);
     }
   }
