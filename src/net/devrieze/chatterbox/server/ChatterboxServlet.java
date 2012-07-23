@@ -318,16 +318,20 @@ public class ChatterboxServlet extends HttpServlet {
     String path2=context.getRealPath(path);
 
     FileReader in = new FileReader(path2);
-    char[] buffer = new char[10000];
-    StringBuilder result = new StringBuilder();
-    int c = in.read(buffer);
-    while (c>=0) {
-      result.append(buffer,0,c);
-      c = in.read(buffer);
+    try {
+      char[] buffer = new char[10000];
+      StringBuilder result = new StringBuilder();
+      int c = in.read(buffer);
+      while (c>=0) {
+        result.append(buffer,0,c);
+        c = in.read(buffer);
+      }
+      resp.getWriter().append(result);
+      resp.setStatus(HttpServletResponse.SC_OK);
+      return true;
+    } finally {
+      in.close();
     }
-    resp.getWriter().append(result);
-    resp.setStatus(HttpServletResponse.SC_OK);
-    return true;
   }
 
   private boolean handleMessages(HttpServletRequest req, HttpServletResponse resp) throws IOException {
