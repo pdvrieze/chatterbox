@@ -23,7 +23,7 @@ public class DBHelper {
     
     DataSourceWrapper(DataSource pDataSource) {
       aDataSource = pDataSource;
-      aConnectionMap = new ConcurrentHashMap<>(5);
+      aConnectionMap = new ConcurrentHashMap<Object, Connection>(5);
     }
   }
   
@@ -82,7 +82,7 @@ public class DBHelper {
         try {
           aSQL.setString(pColumn, pValue);
         } catch (SQLException e) {
-          Logger.getGlobal().log(Level.SEVERE, "Failure to create prepared statement", e);
+          getLogger().log(Level.SEVERE, "Failure to create prepared statement", e);
           aSQL=null;
         }
       }
@@ -96,7 +96,7 @@ public class DBHelper {
         try {
           aSQL.setInt(pColumn, pValue);
         } catch (SQLException e) {
-          Logger.getGlobal().log(Level.SEVERE, "Failure to create prepared statement", e);
+          getLogger().log(Level.SEVERE, "Failure to create prepared statement", e);
           aSQL=null;
         }
       }
@@ -110,7 +110,7 @@ public class DBHelper {
         try {
           aSQL.setLong(pColumn, pValue);
         } catch (SQLException e) {
-          Logger.getGlobal().log(Level.SEVERE, "Failure to create prepared statement", e);
+          getLogger().log(Level.SEVERE, "Failure to create prepared statement", e);
           aSQL=null;
         }
       }
@@ -334,13 +334,17 @@ public class DBHelper {
     return new DBHelper(dataSource, pKey);
     
   }
+  
+  private static Logger getLogger() {
+    return Logger.getAnonymousLogger();
+  }
 
   public static void logWarning(String pMsg) {
-    Logger.getGlobal().log(Level.WARNING, pMsg);
+    getLogger().log(Level.WARNING, pMsg);
   }
 
   public static void logException(final String pMsg, Throwable pE) {
-    Logger.getGlobal().log(Level.SEVERE, pMsg, pE);
+    getLogger().log(Level.SEVERE, pMsg, pE);
   }
   
   private void checkValid() {
