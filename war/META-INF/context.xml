@@ -4,7 +4,7 @@
 
   <Resource name="jdbc/webauth" auth="Container" type="javax.sql.DataSource"
                maxActive="100" maxIdle="30" maxWait="10000"
-               username="webadmin" password="QfWEsNjJeM" driverClassName="com.mysql.jdbc.Driver"
+               username="webauth" password="5glul9f3i4" driverClassName="com.mysql.jdbc.Driver"
                url="jdbc:mysql://localhost/webauth"/>
   <Resource name="jdbc/chatbox" auth="Container" type="javax.sql.DataSource"
                maxActive="100" maxIdle="30" maxWait="10000"
