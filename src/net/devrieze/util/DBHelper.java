@@ -432,9 +432,6 @@ public class DBHelper {
         } 
       }
     }
-    // TODO Auto-generated method stub
-    // 
-    throw new UnsupportedOperationException("Not yet implemented");
   }
 
 }

@@ -3,19 +3,18 @@ package net.devrieze.chatterbox.server;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.security.Principal;
-import java.sql.SQLException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javax.servlet.*;
+import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-
-import net.devrieze.util.DBHelper;
 
 
 public class AuthFilter implements Filter {
 
+  private static final String DARWIN_AUTH_COOKIE = "DWNID";
   @SuppressWarnings("unused")
   private FilterConfig filterConfig;
   private Logger logger;
@@ -39,7 +38,7 @@ public class AuthFilter implements Filter {
   public void doFilter(HttpServletRequest req, HttpServletResponse resp, FilterChain filterChain) throws IOException, ServletException {
 //    System.err.println("dofilter called for "+req.getRequestURI());
     getLogger().log(Level.FINE, "Calling filter for: "+req.getRequestURI());
-    Principal principal = req.getUserPrincipal();
+    Principal principal = getPrincipal(req);
     if (req.getRequestURI().startsWith("/_ah/login")) {
       getLogger().log(Level.FINER, "Calling not filtering authentication: "+req.getRequestURI());
       filterChain.doFilter(req, resp);
@@ -72,6 +71,7 @@ public class AuthFilter implements Filter {
             extramsg="No token received, you will not be authorized to use this app.";
           }
         }
+        resp.setContentType("text/html; charset=utf8");
         PrintWriter out = resp.getWriter();
         out.println("<!DOCTYPE html>\n<html><head><title>Provide access token</title></head><body>");
         out.print("<div style='margin:5em; border: 1px solid black; padding: 2em;'><div style='margin-bottom:2em;'>");
@@ -103,6 +103,24 @@ public class AuthFilter implements Filter {
     }
   }
 
+  private Principal getPrincipal(HttpServletRequest req) {
+    Principal result = req.getUserPrincipal();
+    if (result!=null) { return result; }
+    
+    Cookie cookie = getCookie(req, DARWIN_AUTH_COOKIE);
+    
+    return req.getUserPrincipal();
+  }
+
+  private Cookie getCookie(HttpServletRequest pReq, String pCookieName) {
+    for (Cookie cookie: pReq.getCookies()) {
+      if (cookie.getName()==pCookieName) {
+        return cookie;
+      }
+    }
+    return null;
+  }
+
   /**
    * Get the login url that will forward the user to the requested page.
    * @param pRequestURI The url to forward to.
@@ -122,13 +140,13 @@ public class AuthFilter implements Filter {
   @Override
   public void init(FilterConfig arg0) throws ServletException {
     this.filterConfig = arg0;
-    Object dbKey = new Object();
-    ChatboxManager.ensureTables(dbKey);
-    try {
-      DBHelper.dbHelper(UserManager.RESOURCE_REF, dbKey).close();
-    } catch (SQLException e) {
-      throw new ServletException(e);
-    }
+//    Object dbKey = new Object();
+//    ChatboxManager.ensureTables(dbKey);
+//    try {
+//      DBHelper.dbHelper(UserManager.RESOURCE_REF, dbKey).close();
+//    } catch (SQLException e) {
+//      throw new ServletException(e);
+//    }
   }
 
 }
