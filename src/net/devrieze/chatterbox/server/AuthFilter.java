@@ -14,7 +14,7 @@ import javax.servlet.http.HttpServletResponse;
 
 public class AuthFilter implements Filter {
 
-  private static final String DARWIN_AUTH_COOKIE = "DWNID";
+//  private static final String DARWIN_AUTH_COOKIE = "DWNID";
   @SuppressWarnings("unused")
   private FilterConfig filterConfig;
   private Logger logger;
@@ -39,7 +39,7 @@ public class AuthFilter implements Filter {
 //    System.err.println("dofilter called for "+req.getRequestURI());
     getLogger().log(Level.FINE, "Calling filter for: "+req.getRequestURI());
     Principal principal = getPrincipal(req);
-    if (req.getRequestURI().startsWith("/_ah/login")) {
+    if (req.getRequestURI().startsWith("/accounts/login")) {
       getLogger().log(Level.FINER, "Calling not filtering authentication: "+req.getRequestURI());
       filterChain.doFilter(req, resp);
       return;
@@ -86,6 +86,7 @@ public class AuthFilter implements Filter {
     } else {
       //resp.sendRedirect(userService.createLoginURL(req.getRequestURI()));
       resp.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+      resp.setContentType("text/html");
       PrintWriter out = resp.getWriter();
       out.println("<!DOCTYPE html>\n<html><head><title>Please login</title></head><body>");
       out.print("<div style='margin:5em; border: 1px solid black; padding: 2em;'><div style='margin-bottom:2em;'>");
@@ -98,7 +99,7 @@ public class AuthFilter implements Filter {
       out.print("\">login</a></div>");
       out.println("</body></html>");
 
-      resp.setStatus(HttpServletResponse.SC_FORBIDDEN);
+//      resp.setStatus(HttpServletResponse.SC_FORBIDDEN);
       return;
     }
   }
@@ -107,7 +108,7 @@ public class AuthFilter implements Filter {
     Principal result = req.getUserPrincipal();
     if (result!=null) { return result; }
     
-    Cookie cookie = getCookie(req, DARWIN_AUTH_COOKIE);
+//    Cookie cookie = getCookie(req, DARWIN_AUTH_COOKIE);
     
     return req.getUserPrincipal();
   }
