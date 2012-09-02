@@ -16,6 +16,8 @@ import javax.servlet.http.HttpServletResponse;
 import org.atmosphere.cpr.Broadcaster;
 import org.atmosphere.cpr.Meteor;
 
+import uk.ac.bournemouth.darwin.catalina.realm.DarwinPrincipal;
+import uk.ac.bournemouth.darwin.catalina.realm.DarwinUserPrincipal;
 import static org.atmosphere.cpr.AtmosphereResource.TRANSPORT.*;
 
 import net.devrieze.util.DBHelper;
@@ -448,9 +450,13 @@ public class ChatterboxServlet extends HttpServlet {
     PrintWriter out = resp.getWriter();
     Principal p = req.getUserPrincipal();
     out.println("<?xml version=\"1.0\"?>");
-    out.append("<user id=\"").append(Util.encodeHtml(p.getName())).append("\">\n  <email>")
-       .append(Util.encodeHtml(p.getName())).append("@localhost</email>\n")
-       .append("</user>");
+    out.append("<user id=\"").append(Util.encodeHtml(p.getName())).append("\">\n  <email>");
+    if (p instanceof DarwinUserPrincipal) {
+      out.append(Util.encodeHtml(((DarwinUserPrincipal)p).getEmail())).append("</email>\n");
+    } else {
+      out.append(Util.encodeHtml(p.getName())).append("@localhost</email>\n");
+    }
+    out.append("</user>");
 
     return true;
   }

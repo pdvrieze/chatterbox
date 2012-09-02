@@ -76,8 +76,8 @@ public class AuthFilter implements Filter {
         out.println("<!DOCTYPE html>\n<html><head><title>Provide access token</title></head><body>");
         out.print("<div style='margin:5em; border: 1px solid black; padding: 2em;'><div style='margin-bottom:2em;'>");
         out.print(extramsg);
-        out.print("</div><div><form method='POST' action='"+req.getRequestURI()+"'>");
-        out.println("Please provide your access token</div><div><input type='text' name='key' /><button type='submit'>Submit</button></form></div>");
+        out.print("</div><form method='POST' action='"+req.getRequestURI()+"'><div>");
+        out.println("Please provide your access token</div><div><input type='text' name='key' /><button type='submit'>Submit</button></div></form>");
         out.println("<div style='margin-top: 1em;'>You are logged in as "+principal.getName()+"</div></div>");
         out.println("</body></html>");
         resp.setStatus(HttpServletResponse.SC_FORBIDDEN);
