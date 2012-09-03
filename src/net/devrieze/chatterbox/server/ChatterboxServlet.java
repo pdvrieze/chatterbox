@@ -1,5 +1,7 @@
 package net.devrieze.chatterbox.server;
 
+import static org.atmosphere.cpr.AtmosphereResource.TRANSPORT.LONG_POLLING;
+
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
@@ -13,14 +15,12 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import net.devrieze.util.DBHelper;
+
 import org.atmosphere.cpr.Broadcaster;
 import org.atmosphere.cpr.Meteor;
 
-import uk.ac.bournemouth.darwin.catalina.realm.DarwinPrincipal;
 import uk.ac.bournemouth.darwin.catalina.realm.DarwinUserPrincipal;
-import static org.atmosphere.cpr.AtmosphereResource.TRANSPORT.*;
-
-import net.devrieze.util.DBHelper;
 
 
 public class ChatterboxServlet extends HttpServlet {
