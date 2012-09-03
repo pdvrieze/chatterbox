@@ -2,10 +2,10 @@
 <Context>
   <Loader delegate="true"/>
 
-  <Resource name="jdbc/webauth" auth="Container" type="javax.sql.DataSource"
+  <!-- Resource name="jdbc/webauth" auth="Container" type="javax.sql.DataSource"
                maxActive="100" maxIdle="30" maxWait="10000"
                username="webauth" password="5glul9f3i4" driverClassName="com.mysql.jdbc.Driver"
-               url="jdbc:mysql://localhost/webauth"/>
+               url="jdbc:mysql://localhost/webauth"/ -->
   <Resource name="jdbc/chatbox" auth="Container" type="javax.sql.DataSource"
                maxActive="100" maxIdle="30" maxWait="10000"
                username="chatbox" password="Vf78n3aQLX" driverClassName="com.mysql.jdbc.Driver"
