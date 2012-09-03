@@ -5,6 +5,8 @@ import java.security.Principal;
 import javax.servlet.ServletRequest;
 import javax.sql.DataSource;
 
+import net.devrieze.util.DBHelper;
+
 import static net.devrieze.util.DBHelper.*;
 
 public class UserManager {
@@ -50,6 +52,10 @@ public class UserManager {
 
   public static String getCurrentUserEmail(Principal p) {
     return p.getName()+"@localhost";
+  }
+
+  public static void destroy() {
+    DBHelper.closeAllConnections(RESOURCE_REF);
   }
 
 }

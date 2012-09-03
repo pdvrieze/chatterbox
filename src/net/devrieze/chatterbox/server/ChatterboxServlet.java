@@ -482,6 +482,13 @@ public class ChatterboxServlet extends HttpServlet {
     return null;
   }
 
+  @Override
+  public void destroy() {
+    ChatboxManager.destroy();
+    UserManager.destroy();
+    super.destroy();
+  }
+
 
 
 }

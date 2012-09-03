@@ -368,4 +368,8 @@ public class ChatboxManager {
         .execCommit();
   }
 
+  public static void destroy() {
+    DBHelper.closeAllConnections(DB_RESOURCE);
+  }
+
 }
