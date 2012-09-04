@@ -44,4 +44,13 @@ public class ChannelManager extends WebSocketEventListenerAdapter {
     }
     return aBroadCaster;
   }
+
+  public void destroy() {
+    if (aBroadCaster!=null) {
+      aBroadCaster.destroy();
+    }
+    // TODO Auto-generated method stub
+    // 
+    throw new UnsupportedOperationException("Not yet implemented");
+  }
 }

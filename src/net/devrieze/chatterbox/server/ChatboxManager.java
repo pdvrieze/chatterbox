@@ -3,7 +3,6 @@ package net.devrieze.chatterbox.server;
 import java.security.Principal;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.Iterator;
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -11,10 +10,10 @@ import javax.servlet.ServletRequest;
 
 import static net.devrieze.util.DBHelper.*;
 
-import net.devrieze.util.DBHelper;
-import net.devrieze.util.ResultSetAdapter;
+import net.devrieze.util.*;
+import net.devrieze.util.DBHelper.DBQuery;
+import net.devrieze.util.DBHelper.DBStatement;
 import net.devrieze.util.ResultSetAdapter.ResultSetAdapterIterator;
-import net.devrieze.util.StringAdapter;
 
 
 public class ChatboxManager {
@@ -22,15 +21,21 @@ public class ChatboxManager {
   private static class BoxAdapter extends ResultSetAdapter<Box> {
   
     private ServletRequest aKey;
+    private boolean aAutoClose;
 
-    public BoxAdapter(ResultSet pResultSet, ServletRequest pKey) {
-      super(pResultSet);
+    public BoxAdapter(DBStatement pStatement, ResultSet pResultSet, ServletRequest pKey) {
+      this(pStatement, pResultSet, pKey, false);
+    }
+
+    public BoxAdapter(DBStatement pStatement, ResultSet pResultSet, ServletRequest pKey, boolean pAutoClose) {
+      super(pStatement, pResultSet);
+      aAutoClose = pAutoClose;
       aKey = pKey;
     }
   
     @Override
-    public Iterator<Box> iterator() {
-      return new BoxAdapterIterator(aResultSet, aKey);
+    public BoxAdapterIterator iterator() {
+      return new BoxAdapterIterator(aStatement, aResultSet, aKey, aAutoClose);
     }
   
   }
@@ -42,8 +47,13 @@ public class ChatboxManager {
     private int aOwnerIdx = -1;
     private final ServletRequest aKey;
 
-    public BoxAdapterIterator(ResultSet pResultSet, ServletRequest pKey) {
-      super(pResultSet);
+    public BoxAdapterIterator(DBStatement pStatement, ResultSet pResultSet, ServletRequest pKey) {
+      super(pStatement, pResultSet);
+      aKey = pKey;
+    }
+
+    public BoxAdapterIterator(DBStatement pStatement, ResultSet pResultSet, ServletRequest pKey, boolean pAutoClose) {
+      super(pStatement, pResultSet, pAutoClose);
       aKey = pKey;
     }
 
@@ -74,13 +84,16 @@ public class ChatboxManager {
   
   private static class MessageAdapter extends ResultSetAdapter<Message> {
   
-    public MessageAdapter(ResultSet pResultSet) {
-      super(pResultSet);
+    private boolean aAutoClose;
+
+    public MessageAdapter(DBStatement pStatement, ResultSet pResultSet, boolean pAutoClose) {
+      super(pStatement, pResultSet);
+      aAutoClose = pAutoClose;
     }
   
     @Override
-    public Iterator<Message> iterator() {
-      return new MessageAdapterIterator(aResultSet);
+    public MessageAdapterIterator iterator() {
+      return new MessageAdapterIterator(aStatement, aResultSet, aAutoClose);
     }
   
   }
@@ -91,8 +104,12 @@ public class ChatboxManager {
     private int aMsgIdx = -1;
     private int aSenderIdx = -1;
 
-    public MessageAdapterIterator(ResultSet pResultSet) {
-      super(pResultSet);
+    public MessageAdapterIterator(DBStatement pStatement, ResultSet pResultSet) {
+      super(pStatement, pResultSet);
+    }
+
+    public MessageAdapterIterator(DBStatement pStatement, ResultSet pResultSet, boolean pAutoClose) {
+      super(pStatement, pResultSet, pAutoClose);
     }
 
     @Override
@@ -193,16 +210,20 @@ public class ChatboxManager {
 
   public static Box getBox(String pBoxName, ServletRequest pKey) {
     ensureTables(pKey);
-    Iterator<Box> it = new BoxAdapterIterator(
-        dbHelper(DB_RESOURCE, pKey)
-        .makeQuery(SQL_GET_BOX_WITH_NAME, "Failure verifying chatbox")
-        .addParam(1, pBoxName)
-        .execQuery()
+    final DBQuery statement = dbHelper(DB_RESOURCE, pKey)
+    .makeQuery(SQL_GET_BOX_WITH_NAME, "Failure verifying chatbox")
+    .addParam(1, pBoxName);
+    BoxAdapterIterator it = new BoxAdapterIterator(statement,
+        statement.execQuery()
         , pKey);
-    if (it.hasNext()) {
-      return it.next();
-    } else {
-      return null;
+    try { 
+      if (it.hasNext()) {
+        return it.next();
+      } else {
+        return null;
+      }
+    } finally {
+      it.closeStatement();
     }
   }
 
@@ -214,7 +235,8 @@ public class ChatboxManager {
     DBHelper helper = dbHelper(DB_RESOURCE, pKey);
     
     Set<String> tables = new TreeSet<String>();
-    for (String table: new StringAdapter(helper.makeQuery(SQL_HAS_TABLES).execQuery())) {
+    final DBQuery query = helper.makeQuery(SQL_HAS_TABLES);
+    for (String table: new StringAdapter(query, query.execQuery(), true)) {
       tables.add(table);
     }
     boolean success = true;
@@ -304,29 +326,29 @@ public class ChatboxManager {
     } while (retry);
   }
 
-  public static Iterable<Message> getMessages(int pBoxId, ServletRequest pKey) {
-    ResultSet rs = dbHelper(DB_RESOURCE, pKey)
+  public static MessageAdapter getMessages(int pBoxId, ServletRequest pKey) {
+    final DBQuery statement = dbHelper(DB_RESOURCE, pKey)
         .makeQuery(SQL_QUERY_ALL_MESSAGES)
-        .addParam(1, pBoxId)
-        .execQuery();
-    return new MessageAdapter(rs);
+        .addParam(1, pBoxId);
+    ResultSet rs = statement.execQuery();
+    return new MessageAdapter(statement, rs, true);
   }
 
   public static Iterable<Message> getMessages(int pBoxId, long pStart, long pEnd, ServletRequest pKey) {
-    ResultSet rs = dbHelper(DB_RESOURCE, pKey)
+    final DBQuery statement = dbHelper(DB_RESOURCE, pKey)
         .makeQuery(SQL_QUERY_SOME_MESSAGES)
         .addParam(1, pBoxId)
         .addParam(2, pStart)
-        .addParam(3, pEnd)
-        .execQuery();
-    return new MessageAdapter(rs);
+        .addParam(3, pEnd);
+    ResultSet rs = statement.execQuery();
+    return new MessageAdapter(statement, rs, true);
   }
 
   public static Iterable<Box> getBoxes(ServletRequest pKey) {
-    ResultSet rs = dbHelper(DB_RESOURCE, pKey)
-        .makeQuery("SELECT * FROM "+TABLE_BOXES)
-        .execQuery();
-    return new BoxAdapter(rs, pKey);
+    final DBQuery query = dbHelper(DB_RESOURCE, pKey)
+        .makeQuery("SELECT * FROM "+TABLE_BOXES);
+    ResultSet rs = query.execQuery();
+    return new BoxAdapter(query, rs, pKey, true);
   }
 
   public static boolean isAdmin(Box pBox, Principal pUserPrincipal) {
@@ -347,9 +369,9 @@ public class ChatboxManager {
   }
 
   public static Iterable<String> getAuthTokens(ServletRequest pKey) {
-    return new StringAdapter(dbHelper(DB_RESOURCE, pKey)
-        .makeQuery(SQL_GET_TOKENS)
-        .execQuery());
+    final DBQuery statement = dbHelper(DB_RESOURCE, pKey)
+        .makeQuery(SQL_GET_TOKENS);
+    return new StringAdapter(statement, statement.execQuery(), true);
   }
 
   public static Box createBox(String pBoxName, String pBoxOwner, ServletRequest pKey) {

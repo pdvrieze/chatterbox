@@ -7,6 +7,7 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.security.Principal;
+import java.util.logging.Logger;
 
 import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
@@ -24,6 +25,8 @@ import uk.ac.bournemouth.darwin.catalina.realm.DarwinUserPrincipal;
 
 
 public class ChatterboxServlet extends HttpServlet {
+  
+  static final String VERSION="1.0.1";
 
   static final String DEFAULT_BOX = "defaultBox";
 
@@ -170,11 +173,18 @@ public class ChatterboxServlet extends HttpServlet {
       resp.sendError(HttpServletResponse.SC_NOT_FOUND);
       return;
     }
+    getLogger().info("Handling GET request for "+t.prefix);
     if (t.handle(this, Method.GET, req, resp)) {
+      getLogger().fine("Handled request succesfully");
       DBHelper.closeConnections(req);
     } else {
+      getLogger().info("Could not handle request");
       super.doGet(req, resp);
     }
+  }
+
+  private Logger getLogger() {
+    return Logger.getLogger(ChatterboxServlet.class.getName());
   }
 
   @Override
@@ -184,6 +194,7 @@ public class ChatterboxServlet extends HttpServlet {
       resp.sendError(HttpServletResponse.SC_NOT_FOUND);
       return;
     }
+    getLogger().info("Handling POST request for "+t.prefix);
     if ((t.handle(this, Method.POST, req, resp))) {
       DBHelper.closeConnections(req);
     } else {
@@ -198,6 +209,7 @@ public class ChatterboxServlet extends HttpServlet {
       resp.sendError(HttpServletResponse.SC_NOT_FOUND);
       return;
     }
+    getLogger().info("Handling DELETE request for "+t.prefix);
     if ((t.handle(this, Method.DELETE, req, resp))) {
       DBHelper.closeConnections(req);
     } else {
@@ -212,6 +224,7 @@ public class ChatterboxServlet extends HttpServlet {
       resp.sendError(HttpServletResponse.SC_NOT_FOUND);
       return;
     }
+    getLogger().info("Handling PUT request for "+t.prefix);
     if ((t.handle(this, Method.PUT, req, resp))) {
       DBHelper.closeConnections(req);
     } else {
@@ -483,9 +496,21 @@ public class ChatterboxServlet extends HttpServlet {
   }
 
   @Override
+  public String getServletName() {
+    return ChatterboxServlet.class.getSimpleName();
+  }
+
+  @Override
+  public void init() throws ServletException {
+    super.init();
+    getLogger().info(getServletName()+" version:"+VERSION+" started");
+  }
+
+  @Override
   public void destroy() {
     ChatboxManager.destroy();
     UserManager.destroy();
+    channelManager.destroy();
     super.destroy();
   }
 

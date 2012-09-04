@@ -1,6 +1,7 @@
 package net.devrieze.chatterbox.server;
 
 import java.security.Principal;
+import java.sql.SQLException;
 
 import javax.servlet.ServletRequest;
 import javax.sql.DataSource;
@@ -31,19 +32,18 @@ public class UserManager {
 
   static DataSource aDataSource;
 
-  public static void addAllowedUser(Principal pPrincipal, ServletRequest pKey) {
+  public static void addAllowedUser(Principal pPrincipal, ServletRequest pKey) throws SQLException {
     dbHelper(RESOURCE_REF, pKey).makeInsert(SQL_ADD_APP_PERM, "Failure to register access permission in database")
           .addParam(SQL_I_ADD_APP_PERM_COL_USER, pPrincipal.getName())
           .addParam(SQL_I_ADD_APP_PERM_COL_APPNAME, APPNAME)
           .execCommit();
   }
 
-  public static boolean isAllowedUser(Principal pPrincipal, ServletRequest pKey) {
-    final boolean result = dbHelper(RESOURCE_REF, pKey).makeQuery(SQL_CHECK_APP_PERM, "Failure to verify access permission in database")
+  public static boolean isAllowedUser(Principal pPrincipal, ServletRequest pKey) throws SQLException {
+    return dbHelper(RESOURCE_REF, pKey).makeQuery(SQL_CHECK_APP_PERM, "Failure to verify access permission in database")
           .addParam(SQL_I_CHECK_APP_PERM_COL_USER, pPrincipal.getName())
           .addParam(SQL_I_CHECK_APP_PERM_COL_APPNAME, APPNAME)
           .execQueryNotEmpty();
-    return result;
   }
 
   public static String createLogoutURL(String pURI) {

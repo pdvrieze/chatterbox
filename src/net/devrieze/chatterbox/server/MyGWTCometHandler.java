@@ -20,7 +20,7 @@ public class MyGWTCometHandler extends AtmosphereGwtHandler {
     return TIMEOUT;
   }
 
-  private static final int TIMEOUT = -1;
+  private static final int TIMEOUT = 60000;// Resume after 60 seconds
   static final String BROADCASTERNAME = GWT_BROADCASTER_ID;
 
   @Override
