@@ -2,6 +2,7 @@ package net.devrieze.chatterbox.server;
 
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.net.URLEncoder;
 import java.security.Principal;
 import java.sql.SQLException;
 import java.util.logging.Level;
@@ -125,7 +126,7 @@ public class AuthFilter implements Filter {
    * @param pRequestURI The url to forward to.
    */
   private String getLoginURL(String pRequestURI) {
-    return "";
+    return "/accounts/login?redirect="+URLEncoder.encode(pRequestURI);
   }
   
   private static void addAllowedUser(Principal principal, ServletRequest pKey) throws SQLException {
