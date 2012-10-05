@@ -1,7 +1,5 @@
 package net.devrieze.chatterbox.server;
 
-import static org.atmosphere.cpr.AtmosphereResource.TRANSPORT.LONG_POLLING;
-
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
@@ -16,16 +14,17 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import net.devrieze.util.DBHelper;
-
 import org.atmosphere.cpr.Broadcaster;
 import org.atmosphere.cpr.Meteor;
 
 import uk.ac.bournemouth.darwin.catalina.realm.DarwinUserPrincipal;
+import static org.atmosphere.cpr.AtmosphereResource.TRANSPORT.*;
+
+import net.devrieze.util.db.DBHelper;
 
 
 public class ChatterboxServlet extends HttpServlet {
-  
+
   static final String VERSION="1.0.1";
 
   static final String DEFAULT_BOX = "defaultBox";
@@ -37,7 +36,7 @@ public class ChatterboxServlet extends HttpServlet {
   private static final Object MIME_TYPE_COMET = "application/comet";
 
   private ChannelManager channelManager = new ChannelManager();
-  
+
   private static enum Method {
     GET,
     POST,
@@ -234,12 +233,12 @@ public class ChatterboxServlet extends HttpServlet {
 
   private Box getDefaultBox(ServletRequest pKey) {
     Box result = ChatboxManager.getBox(DEFAULT_BOX, pKey);
-    if (result==null) { 
+    if (result==null) {
       result = ChatboxManager.createBox(DEFAULT_BOX, DEFAULT_OWNER, pKey);
     }
     return result;
   }
-  
+
   private boolean handleMessage(HttpServletRequest req, HttpServletResponse resp) throws IOException {
     int contentLength = req.getContentLength();
     if (contentLength > 10240) {
@@ -302,7 +301,7 @@ public class ChatterboxServlet extends HttpServlet {
         notFound = ! ChatboxManager.isValidToken(token, req);
       }
     }
-    
+
     if (notFound) {
       resp.setStatus(HttpServletResponse.SC_NOT_FOUND);
       return true;
@@ -328,7 +327,7 @@ public class ChatterboxServlet extends HttpServlet {
     path = path.substring(1);
     if (path.length()==0) { path = "Chatterbox.html"; }
     if (path.contains("..")) { return false; }
-    
+
     ServletContext context = req.getSession().getServletContext();
     String path2=context.getRealPath(path);
 
@@ -353,7 +352,7 @@ public class ChatterboxServlet extends HttpServlet {
     resp.setContentType("text/xml; charset=utf-8");
     PrintWriter out = resp.getWriter();
     out.println("<?xml version=\"1.0\"?>");
-    
+
     try {
       out.print("<messages name=\"");
       Box b;
@@ -363,7 +362,7 @@ public class ChatterboxServlet extends HttpServlet {
       } finally {
         out.println("\">");
       }
-      
+
       long start = b.getFirstMessageIndex();
       long end = b.getLastMessageIndex();
       {
@@ -424,8 +423,8 @@ public class ChatterboxServlet extends HttpServlet {
 
   private boolean handleClear(HttpServletRequest pReq, HttpServletResponse pResp) throws IOException {
     return handleClear(pReq, pResp, getDefaultBox(pReq));
-  }  
-  
+  }
+
   private boolean handleClear(HttpServletRequest pReq, HttpServletResponse resp, Box pBox) throws IOException {
     if (! ChatboxManager.isAdmin(pBox, pReq.getUserPrincipal())) {
       resp.setStatus(HttpServletResponse.SC_FORBIDDEN);
@@ -442,7 +441,7 @@ public class ChatterboxServlet extends HttpServlet {
     resp.setStatus(HttpServletResponse.SC_OK);
     return true;
   }
-  
+
 
   private boolean handleConnect(HttpServletRequest req, HttpServletResponse resp) {
     Meteor m = Meteor.build(req).addListener(channelManager);

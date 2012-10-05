@@ -8,18 +8,18 @@ import java.util.TreeSet;
 
 import javax.servlet.ServletRequest;
 
-import static net.devrieze.util.DBHelper.*;
+import static net.devrieze.util.db.DBHelper.*;
 
-import net.devrieze.util.*;
-import net.devrieze.util.DBHelper.DBQuery;
-import net.devrieze.util.DBHelper.DBStatement;
-import net.devrieze.util.ResultSetAdapter.ResultSetAdapterIterator;
+import net.devrieze.util.db.*;
+import net.devrieze.util.db.DBHelper.DBQuery;
+import net.devrieze.util.db.DBHelper.DBStatement;
+import net.devrieze.util.db.ResultSetAdapter.ResultSetAdapterIterator;
 
 
 public class ChatboxManager {
-  
+
   private static class BoxAdapter extends ResultSetAdapter<Box> {
-  
+
     private ServletRequest aKey;
     private boolean aAutoClose;
 
@@ -32,15 +32,15 @@ public class ChatboxManager {
       aAutoClose = pAutoClose;
       aKey = pKey;
     }
-  
+
     @Override
     public BoxAdapterIterator iterator() {
       return new BoxAdapterIterator(aStatement, aResultSet, aKey, aAutoClose);
     }
-  
+
   }
 
-  
+
   private static class BoxAdapterIterator extends ResultSetAdapterIterator<Box> {
     private int aBoxIdIdx = -1;
     private int aNameIdx = -1;
@@ -78,24 +78,24 @@ public class ChatboxManager {
       String owner = pResultSet.getString(aOwnerIdx);
       return new Box(boxId, boxName, owner, aKey);
     }
-    
+
   }
-  
-  
+
+
   private static class MessageAdapter extends ResultSetAdapter<Message> {
-  
+
     private boolean aAutoClose;
 
     public MessageAdapter(DBStatement pStatement, ResultSet pResultSet, boolean pAutoClose) {
       super(pStatement, pResultSet);
       aAutoClose = pAutoClose;
     }
-  
+
     @Override
     public MessageAdapterIterator iterator() {
       return new MessageAdapterIterator(aStatement, aResultSet, aAutoClose);
     }
-  
+
   }
 
   private static class MessageAdapterIterator extends ResultSetAdapterIterator<Message> {
@@ -136,14 +136,14 @@ public class ChatboxManager {
       String senderEmail = pResultSet.getString(aSenderIdx);
       return new Message(index, messageBody, epoch, senderEmail);
     }
-    
+
   }
-  
+
   private static final String DB_RESOURCE = "java:/comp/env/jdbc/chatbox";
-  
+
   private static final String TABLE_MESSAGES = "`messages`";
   private static final String TABLE_BOXES = "`boxes`";
-  
+
   private static final String TABLE_TOKENS = "`tokens`";
 
   private static final String COL_EPOCH = "`epoch`";
@@ -170,7 +170,7 @@ public class ChatboxManager {
   private static final String SQL_INSERT_MESSAGE = "INSERT INTO "+TABLE_MESSAGES+" ("+COL_BOXID+","+COL_MSG_INDEX+","+COL_SENDER+","+COL_MESSAGE+","+COL_EPOCH+") VALUES ( ?, ?, ?, ?, ? )";
 
   private static final String SQL_CLEAR_BOX = "DELETE FROM "+TABLE_MESSAGES+" WHERE "+COL_BOXID+" = ?";
-  
+
   private static final String SQL_GET_BOX_WITH_NAME = "SELECT * FROM "+TABLE_BOXES+ " WHERE "+COL_BOXNAME+" = ? ORDER BY "+COL_BOXID+" LIMIT 1";
   private static final String SQL_GET_FIRST_INDEX = "SELECT min("+COL_MSG_INDEX+") from "+TABLE_MESSAGES + " WHERE "+COL_BOXID+" = ?";
   private static final String SQL_GET_LAST_INDEX = "SELECT max("+COL_MSG_INDEX+") from "+TABLE_MESSAGES + " WHERE "+COL_BOXID+" = ?";
@@ -186,7 +186,7 @@ public class ChatboxManager {
   		COL_BOXNAME + " VARCHAR(50),\n" +
         COL_BOXOWNER + " VARCHAR(50),\n" +
   		"PRIMARY KEY (" + COL_BOXID + ") ) engine=innodb;";
-  
+
   private static final String SQL_CREATE_MESSAGES="CREATE TABLE IF NOT EXISTS " + TABLE_MESSAGES + " ("+
       COL_MSG_ID + " INTEGER NOT NULL AUTO_INCREMENT," +
       COL_BOXID + " INTEGER NOT NULL," +
@@ -195,7 +195,7 @@ public class ChatboxManager {
       COL_EPOCH + " LONG NOT NULL," +
       COL_SENDER + " VARCHAR(50)," +
       "PRIMARY KEY (" + COL_MSG_ID + ")," +
-      "FOREIGN KEY (" + COL_BOXID + 
+      "FOREIGN KEY (" + COL_BOXID +
         ") REFERENCES " + TABLE_BOXES + " ( " + COL_BOXID + " )," +
       "UNIQUE ( " + COL_MSG_ID + ", " + COL_MSG_INDEX + " )" +
       " ) ENGINE=InnoDB;";
@@ -216,7 +216,7 @@ public class ChatboxManager {
     BoxAdapterIterator it = new BoxAdapterIterator(statement,
         statement.execQuery()
         , pKey);
-    try { 
+    try {
       if (it.hasNext()) {
         return it.next();
       } else {
@@ -230,10 +230,10 @@ public class ChatboxManager {
   static void ensureTables(Object pKey) {
     if (_tables_ensured ) { return; }
     _tables_ensured = true;
-    
-    
+
+
     DBHelper helper = dbHelper(DB_RESOURCE, pKey);
-    
+
     Set<String> tables = new TreeSet<String>();
     final DBQuery query = helper.makeQuery(SQL_HAS_TABLES);
     for (String table: new StringAdapter(query, query.execQuery(), true)) {
@@ -268,8 +268,8 @@ public class ChatboxManager {
     char c=result.charAt(0);
     if (c=='"' || c=='\'' || c=='`') {
       result = result.substring(1);
-    } else { c=0;} 
-    
+    } else { c=0;}
+
     char d=result.charAt(result.length()-1);
     if (c==d || (c==0 && (d=='"' || d=='\'' || d=='`') )) {
       result = result.substring(0, result.length()-1);
@@ -308,7 +308,7 @@ public class ChatboxManager {
           .addParam(1, pBoxId)
           .longQuery();
       long newIndex=oldIndex==null ? 0 : 1+oldIndex.longValue();
-  
+
       if (! helper.makeQuery(SQL_INSERT_MESSAGE)
           .addParam(1, pBoxId)
           .addParam(2, newIndex)
