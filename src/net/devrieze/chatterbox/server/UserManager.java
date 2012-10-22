@@ -1,12 +1,12 @@
 package net.devrieze.chatterbox.server;
 
-import static net.devrieze.util.db.DBHelper.dbHelper;
-
 import java.security.Principal;
 import java.sql.SQLException;
 
 import javax.servlet.ServletRequest;
 import javax.sql.DataSource;
+
+import static net.devrieze.util.db.DBHelper.*;
 
 import net.devrieze.util.db.DBHelper;
 
@@ -51,7 +51,7 @@ public class UserManager {
   }
 
   public static String getCurrentUserEmail(Principal p) {
-    return p.getName()+"@localhost";
+    return p.getName()+"@bournemouth.ac.uk";
   }
 
   public static void destroy() {
