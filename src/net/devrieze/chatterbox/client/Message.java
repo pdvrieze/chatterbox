@@ -13,17 +13,17 @@ public class Message extends MessagePojo{
   public Message(MessagePojo pPojo) {
     super(pPojo);
   }
-  
+
   /** @deprecated Does not record sender */
   @Deprecated
   public Message(String index, String epoch, NodeList content) {
     this(index, "nobody@example.com", epoch, content);
   }
-  
+
   public Message(String index, String pSender, String epoch, NodeList content) {
-    super(parseIndex(index), pSender, parseEpoch(epoch), content.toString());
+    super(parseIndex(index), content.toString(), parseEpoch(epoch), pSender);
   }
-  
+
   private static long parseIndex(String pIndex) {
     final long result = Long.parseLong(pIndex);
     if (result<0) {
@@ -31,7 +31,7 @@ public class Message extends MessagePojo{
     }
     return result;
   }
-  
+
   private static long parseEpoch(String pEpoch) {
     return Long.parseLong(pEpoch);
   }
