@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <classpath>
+	<classpathentry kind="con" path="com.google.gwt.eclipse.core.GWT_CONTAINER"/>
 	<classpathentry kind="src" path="src"/>
 	<classpathentry kind="lib" path="war/WEB-INF/lib/atmosphere-runtime-0.9.7.jar" sourcepath="atmosphere-runtime-0.9.7-sources.jar">
 		<attributes>
@@ -8,16 +9,6 @@
 	</classpathentry>
 	<classpathentry kind="lib" path="war/WEB-INF/lib/atmosphere-gwt-common-0.9.7.jar" sourcepath="/home/paul/.m2/repository/org/atmosphere/atmosphere-gwt-common/0.9.7/atmosphere-gwt-common-0.9.7-sources.jar"/>
 	<classpathentry kind="lib" path="war/WEB-INF/lib/atmosphere-gwt-server-0.9.7.jar" sourcepath="atmosphere-gwt-server-0.9.7-sources.jar"/>
-	<classpathentry kind="lib" path="lib/atmosphere-gwt-mod-0.9.7.jar">
-		<attributes>
-			<attribute name="org.eclipse.jst.component.nondependency" value=""/>
-		</attributes>
-	</classpathentry>
-	<classpathentry kind="con" path="com.google.gwt.eclipse.core.GWT_CONTAINER/gwt-2.5.0.rc1">
-		<attributes>
-			<attribute name="org.eclipse.jst.component.nondependency" value=""/>
-		</attributes>
-	</classpathentry>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/sun-jdk-1.6">
 		<attributes>
 			<attribute name="owner.project.facets" value="java"/>
@@ -26,5 +17,6 @@
 	<classpathentry combineaccessrules="false" kind="src" path="/DarwinCommon"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/DarwinJavaApi"/>
 	<classpathentry kind="con" path="org.eclipse.jst.server.core.container/org.eclipse.jst.server.tomcat.runtimeTarget/Apache Tomcat v6.0"/>
+	<classpathentry kind="lib" path="lib/atmosphere-gwt-client-0.9.7.jar"/>
 	<classpathentry kind="output" path="war/WEB-INF/classes"/>
 </classpath>
