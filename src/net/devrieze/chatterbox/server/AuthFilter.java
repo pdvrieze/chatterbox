@@ -12,8 +12,9 @@ import javax.servlet.*;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import net.devrieze.util.db.DBHelper;
 import uk.ac.bournemouth.darwin.html.util.DarwinHtml;
+
+import net.devrieze.util.db.DBHelper;
 
 
 public class AuthFilter implements Filter {
@@ -21,7 +22,6 @@ public class AuthFilter implements Filter {
 //  private static final String DARWIN_AUTH_COOKIE = "DWNID";
   @SuppressWarnings("unused")
   private FilterConfig filterConfig;
-  private Logger logger;
   @Override
   public void destroy() {
     // Don't do anything yet.
@@ -32,15 +32,13 @@ public class AuthFilter implements Filter {
     try {
       doFilter((HttpServletRequest)req, (HttpServletResponse) resp, filterChain);
     } finally {
+      getLogger().warning("Closing database connection for req: "+req);
       DBHelper.closeConnections(req);
     }
   }
 
   private Logger getLogger() {
-    if (logger==null) {
-      logger = Logger.getLogger(getClass().getName());
-    }
-    return logger;
+    return Logger.getLogger(getClass().getName());
   }
 
   public void doFilter(HttpServletRequest req, HttpServletResponse pResponse, FilterChain filterChain) throws IOException, ServletException {
