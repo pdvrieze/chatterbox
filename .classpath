@@ -8,7 +8,7 @@
 	</classpathentry>
 	<classpathentry kind="lib" path="war/WEB-INF/lib/atmosphere-gwt-common-0.9.7.jar" sourcepath="/home/paul/.m2/repository/org/atmosphere/atmosphere-gwt-common/0.9.7/atmosphere-gwt-common-0.9.7-sources.jar"/>
 	<classpathentry kind="lib" path="war/WEB-INF/lib/atmosphere-gwt-server-0.9.7.jar" sourcepath="atmosphere-gwt-server-0.9.7-sources.jar"/>
-	<classpathentry kind="lib" path="lib/atmostphere-gwt-mod-0.9.7.jar">
+	<classpathentry kind="lib" path="lib/atmosphere-gwt-mod-0.9.7.jar">
 		<attributes>
 			<attribute name="org.eclipse.jst.component.nondependency" value=""/>
 		</attributes>
