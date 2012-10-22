@@ -9,10 +9,10 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javax.servlet.*;
-import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import net.devrieze.util.db.DBHelper;
 import uk.ac.bournemouth.darwin.html.util.DarwinHtml;
 
 
@@ -29,7 +29,11 @@ public class AuthFilter implements Filter {
 
   @Override
   public void doFilter(ServletRequest req, ServletResponse resp, FilterChain filterChain) throws IOException, ServletException {
-    doFilter((HttpServletRequest)req, (HttpServletResponse) resp, filterChain);
+    try {
+      doFilter((HttpServletRequest)req, (HttpServletResponse) resp, filterChain);
+    } finally {
+      DBHelper.closeConnections(req);
+    }
   }
 
   private Logger getLogger() {
@@ -49,11 +53,11 @@ public class AuthFilter implements Filter {
       return;
     }
 
-    // Allow access to messages without authentication
-    if ("/messages".equals(req.getServletPath()) && req.getMethod().equals("GET")) {
-      filterChain.doFilter(req, pResponse);
-      return;
-    }
+//    // Allow access to messages without authentication
+//    if ("/messages".equals(req.getServletPath()) && req.getMethod().equals("GET")) {
+//      filterChain.doFilter(req, pResponse);
+//      return;
+//    }
 
     try {
       if (principal!=null) {
@@ -103,7 +107,7 @@ public class AuthFilter implements Filter {
         }
         out.print("\">login</a></div>");
         out.println("</body></html>");
-  
+
   //      resp.setStatus(HttpServletResponse.SC_FORBIDDEN);
         return;
       }
@@ -115,9 +119,9 @@ public class AuthFilter implements Filter {
   private Principal getPrincipal(HttpServletRequest req) {
     Principal result = req.getUserPrincipal();
     if (result!=null) { return result; }
-    
+
 //    Cookie cookie = getCookie(req, DARWIN_AUTH_COOKIE);
-    
+
     return req.getUserPrincipal();
   }
 
@@ -128,7 +132,7 @@ public class AuthFilter implements Filter {
   private String getLoginURL(String pRequestURI) {
     return "/accounts/login?redirect="+URLEncoder.encode(pRequestURI);
   }
-  
+
   private static void addAllowedUser(Principal principal, ServletRequest pKey) throws SQLException {
     UserManager.addAllowedUser(principal, pKey);
   }

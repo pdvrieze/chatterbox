@@ -1,12 +1,12 @@
 package net.devrieze.chatterbox.server;
 
+import static net.devrieze.util.db.DBHelper.dbHelper;
+
 import java.security.Principal;
 import java.sql.SQLException;
 
 import javax.servlet.ServletRequest;
 import javax.sql.DataSource;
-
-import static net.devrieze.util.db.DBHelper.*;
 
 import net.devrieze.util.db.DBHelper;
 
@@ -47,7 +47,7 @@ public class UserManager {
   }
 
   public static String createLogoutURL(String pURI) {
-    return pURI;
+    return "/accounts/logout";
   }
 
   public static String getCurrentUserEmail(Principal p) {

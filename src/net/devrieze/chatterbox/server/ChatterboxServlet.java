@@ -1,5 +1,7 @@
 package net.devrieze.chatterbox.server;
 
+import static org.atmosphere.cpr.AtmosphereResource.TRANSPORT.LONG_POLLING;
+
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
@@ -14,13 +16,12 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import net.devrieze.util.db.DBHelper;
+
 import org.atmosphere.cpr.Broadcaster;
 import org.atmosphere.cpr.Meteor;
 
 import uk.ac.bournemouth.darwin.catalina.realm.DarwinUserPrincipal;
-import static org.atmosphere.cpr.AtmosphereResource.TRANSPORT.*;
-
-import net.devrieze.util.db.DBHelper;
 
 
 public class ChatterboxServlet extends HttpServlet {
@@ -173,12 +174,15 @@ public class ChatterboxServlet extends HttpServlet {
       return;
     }
     getLogger().info("Handling GET request for "+t.prefix);
-    if (t.handle(this, Method.GET, req, resp)) {
-      getLogger().fine("Handled request succesfully");
+    try {
+      if (t.handle(this, Method.GET, req, resp)) {
+        getLogger().fine("Handled request succesfully");
+      } else {
+        getLogger().info("Could not handle request");
+        super.doGet(req, resp);
+      }
+    } finally {
       DBHelper.closeConnections(req);
-    } else {
-      getLogger().info("Could not handle request");
-      super.doGet(req, resp);
     }
   }
 
@@ -194,10 +198,12 @@ public class ChatterboxServlet extends HttpServlet {
       return;
     }
     getLogger().info("Handling POST request for "+t.prefix);
-    if ((t.handle(this, Method.POST, req, resp))) {
+    try {
+      if (! (t.handle(this, Method.POST, req, resp))) {
+        super.doPost(req, resp);
+      }
+    } finally {
       DBHelper.closeConnections(req);
-    } else {
-      super.doPost(req, resp);
     }
   }
 
@@ -209,10 +215,12 @@ public class ChatterboxServlet extends HttpServlet {
       return;
     }
     getLogger().info("Handling DELETE request for "+t.prefix);
-    if ((t.handle(this, Method.DELETE, req, resp))) {
+    try {
+      if (! (t.handle(this, Method.DELETE, req, resp))) {
+        super.doDelete(req, resp);
+      }
+    } finally {
       DBHelper.closeConnections(req);
-    } else {
-      super.doDelete(req, resp);
     }
   }
 
