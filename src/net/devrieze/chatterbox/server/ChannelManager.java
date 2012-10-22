@@ -1,9 +1,12 @@
 package net.devrieze.chatterbox.server;
 
 import java.security.Principal;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import javax.servlet.ServletRequest;
 
+import org.atmosphere.cpr.AtmosphereResource;
 import org.atmosphere.cpr.Broadcaster;
 import org.atmosphere.cpr.BroadcasterFactory;
 import org.atmosphere.websocket.WebSocketEventListenerAdapter;
@@ -17,20 +20,20 @@ public class ChannelManager extends WebSocketEventListenerAdapter {
   Message createNewMessageAndNotify(String messageBody, Principal pSender, ServletRequest pKey) {
     Box box = getDefaultBox(pKey);
     Message message = box.addMessage(messageBody, pSender);
-    
+
     if (aBroadCaster==null) {
       getBroadcaster();
     }
-    
+
     if (aBroadCaster!=null) {
       aBroadCaster.broadcast(message.toXML());
     }
-    
+
     Broadcaster gwtBroadCaster = BroadcasterFactory.getDefault().lookup(MyGWTCometHandler.BROADCASTERNAME, true);
     if (gwtBroadCaster!=null) {
       gwtBroadCaster.broadcast(message.pojoCopy());
     }
-    
+
     return message;
   }
 
@@ -47,10 +50,12 @@ public class ChannelManager extends WebSocketEventListenerAdapter {
 
   public void destroy() {
     if (aBroadCaster!=null) {
+      for(AtmosphereResource resource: aBroadCaster.getAtmosphereResources()) {
+        resource.resume();
+      }
       aBroadCaster.destroy();
+      aBroadCaster=null;
+      Logger.getAnonymousLogger().log(Level.INFO, "Shutting down atmosphere broadcaster");
     }
-    // TODO Auto-generated method stub
-    // 
-    throw new UnsupportedOperationException("Not yet implemented");
   }
 }
