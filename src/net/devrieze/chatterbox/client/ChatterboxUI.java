@@ -77,7 +77,7 @@ public class ChatterboxUI extends Composite implements UpdateMessageEvent.Handle
     errorLabel.setText(""); // Reset status updates before sending
     sendMessage();
   }
-  
+
   @UiHandler("toggleChannel")
   void handleChannelClick(@SuppressWarnings("unused") ClickEvent e) {
     messageQueue.setUseChannel(! messageQueue.isUseChannel());
@@ -155,6 +155,7 @@ public class ChatterboxUI extends Composite implements UpdateMessageEvent.Handle
       } else {
         mHtml.append("<div class=\"odd\">");
       }
+      mHtml.append("<b class=\"sender\">").append(m.getSender()).append(": </b>");
       mHtml.append(m.getMessageBody());
       mHtml.append("</div>");
 

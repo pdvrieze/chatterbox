@@ -38,18 +38,18 @@ public class ChatterBoxQueue implements Window.ClosingHandler{
           eventBus.fireEventFromSource(new StatusEvent(StatusLevel.INFO, "channel opened when close requested, socket lost"),ChatterBoxQueue.this);
         }
       } else {
-        eventBus.fireEventFromSource(new StatusEvent(StatusLevel.INFO, "channel opened"),ChatterBoxQueue.this);
+        eventBus.fireEventFromSource(new StatusEvent(StatusLevel.DEBUG, "channel opened"),ChatterBoxQueue.this);
       }
     }
 
     @Override
     public void onBeforeDisconnected() {
-      eventBus.fireEventFromSource(new StatusEvent(StatusLevel.INFO, "channel disconnecting"),ChatterBoxQueue.this);
+      eventBus.fireEventFromSource(new StatusEvent(StatusLevel.DEBUG, "channel disconnecting"),ChatterBoxQueue.this);
     }
 
     @Override
     public void onDisconnected() {
-      eventBus.fireEventFromSource(new StatusEvent(StatusLevel.INFO, "channel closed"),ChatterBoxQueue.this);
+      eventBus.fireEventFromSource(new StatusEvent(StatusLevel.DEBUG, "channel closed"),ChatterBoxQueue.this);
     }
 
     @Override
@@ -80,13 +80,13 @@ public class ChatterBoxQueue implements Window.ClosingHandler{
     }
   }
 
-  
+
   public static final int FIRSTMESSAGE = -2;
   public static final int LASTMESSAGE = -1;
   private static final String MESSAGESBASEURL = "chat/messages";
   private static final String CONNECTURL = "gwtcomet";
   private static final String MESSAGEPOSTBASEURL = "chat/messages";
-  
+
   private ArrayList<Message> messages;
   private long firstMessage = -1;
   private long lastKnownMessage = -1;
@@ -95,17 +95,17 @@ public class ChatterBoxQueue implements Window.ClosingHandler{
   private boolean useChannel;
 
   private AtmosphereClient aAtmosphereClient=null;
-  
+
   public ChatterBoxQueue (EventBus eventBus, boolean useChannel) {
     this.eventBus = eventBus;
     this.setUseChannel(useChannel);
     messages = new ArrayList<Message>();
     Window.addWindowClosingHandler(this);
   }
-  
+
   /**
    * Handler for Asynchronous requests that result in xml messages
-   * @param request The request this handler responds to 
+   * @param request The request this handler responds to
    * @param response The response to be processed by the handler
    */
   public void handleMessagesReceived(final Request request, Response response) {
@@ -115,7 +115,7 @@ public class ChatterBoxQueue implements Window.ClosingHandler{
       handleMessagesReceived(messageText);
     }
   }
-  
+
   public void handleMessagesReceived(List<?> pMessages) {
     for (Object message: pMessages) {
       if (message instanceof CharSequence) {
@@ -126,13 +126,13 @@ public class ChatterBoxQueue implements Window.ClosingHandler{
         handleMessageReceived((MessagePojo) message);
       }
     }
-    
+
   }
-  
+
   public void handleMessageReceived(MessagePojo message) {
     addMessage(new Message(message));
   }
-  
+
 
   public void handleMessagesReceived(String messageText) {
     Document message;
@@ -162,7 +162,7 @@ public class ChatterBoxQueue implements Window.ClosingHandler{
     if ("message".equals(e.getTagName())) {
       String index = e.getAttribute("index");
       String epoch = e.getAttribute("epoch");
-      String sender = e.getAttribute("sender");
+      String sender = e.getAttribute("from");
       NodeList content = e.getChildNodes();
       if (index!=null) {
         Message m = new Message(index, sender, epoch, content);
@@ -176,7 +176,7 @@ public class ChatterBoxQueue implements Window.ClosingHandler{
   private void addMessage(Message m) {
     if (firstMessage<0) {
       updateFirstMessage();
-      firstMessage = m.getIndex(); 
+      firstMessage = m.getIndex();
       if (firstMessage <10) { // optimize speed over small memory use
         firstMessage = 0;
       }
@@ -203,7 +203,7 @@ public class ChatterBoxQueue implements Window.ClosingHandler{
       messages.add(m);
       fireUpdateMessage(listPos);
     }
-    lastKnownMessage = Math.min(lastKnownMessage, firstMessage+messages.size());
+    lastKnownMessage = Math.max(lastKnownMessage, firstMessage+messages.size());
   }
 
   private void fireUpdateMessage(int listPos) {
@@ -212,7 +212,7 @@ public class ChatterBoxQueue implements Window.ClosingHandler{
 
   private void fireUpdateMove(int amount) {
     eventBus.fireEventFromSource(new MoveMessagesEvent(amount), this);
-    
+
   }
 
   private void moveMessages(int pListPos) {
@@ -247,7 +247,7 @@ public class ChatterBoxQueue implements Window.ClosingHandler{
   public void requestMessages() {
     requestMessages(FIRSTMESSAGE, LASTMESSAGE);
   }
-  
+
   /**
    * Initiate requesting a message range. {@link #FIRSTMESSAGE} is a special value for the first message,
    * {@link #LASTMESSAGE} is a special value for the last message.
@@ -272,16 +272,16 @@ public class ChatterBoxQueue implements Window.ClosingHandler{
       requestURL.append(parChar).append("end=").append(end);
       parChar= '&';
     }
-    
+
     RequestBuilder rb = new RequestBuilder(RequestBuilder.GET, requestURL.toString());
     try {
       rb.sendRequest(null, new RequestCallback() {
-        
+
         @Override
         public void onResponseReceived(Request request, Response response) {
           handleMessagesReceived(request, response);
         }
-        
+
         @Override
         public void onError(Request request, Throwable exception) {
           eventBus.fireEventFromSource(new StatusEvent(StatusLevel.WARNING, "Requesting messages failed", exception), this);
@@ -290,7 +290,7 @@ public class ChatterBoxQueue implements Window.ClosingHandler{
     } catch (RequestException e) {
       eventBus.fireEventFromSource(new StatusEvent(StatusLevel.WARNING, "Requesting messages failed", e), this);
     }
-    
+
   }
 
   /**
@@ -326,7 +326,7 @@ public class ChatterBoxQueue implements Window.ClosingHandler{
     } else {
       disconnectFromChannel();
     }
-    
+
   }
 
   private void disconnectFromChannel() {
@@ -334,13 +334,13 @@ public class ChatterBoxQueue implements Window.ClosingHandler{
       aAtmosphereClient.stop();
 //      aAtmosphereClient=null;
     }
-    
+
   }
 
   private void connectToChannel() {
     ChannelSocketListener listener = new ChannelSocketListener();
     if (aAtmosphereClient==null) {
-      
+
       AtmosphereGWTSerializer myserializer = GWT.create(MessageDeserializer.class);
       aAtmosphereClient = new AtmosphereClient(GWT.getHostPageBaseURL()+CONNECTURL, myserializer, listener, true);
     }
@@ -350,7 +350,7 @@ public class ChatterBoxQueue implements Window.ClosingHandler{
   public boolean isUseChannel() {
     return useChannel;
   }
-  
+
 
   @Override
   public void onWindowClosing(ClosingEvent event) {
@@ -361,7 +361,7 @@ public class ChatterBoxQueue implements Window.ClosingHandler{
     RequestBuilder rb = new RequestBuilder(RequestBuilder.POST, MESSAGEPOSTBASEURL);
     try {
       rb.sendRequest(textToServer, new RequestCallback() {
-        
+
         @Override
         public void onResponseReceived(Request request, Response response) {
           handleMessagesReceived(request, response);
