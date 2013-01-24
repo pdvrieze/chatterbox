@@ -1,6 +1,6 @@
 package net.devrieze.chatterbox.server;
 
-import static net.devrieze.util.db.DBHelper.dbHelper;
+import static net.devrieze.util.db.DBHelper.getDbHelper;
 
 import java.security.Principal;
 import java.sql.SQLException;
@@ -33,17 +33,27 @@ public class UserManager {
   static DataSource aDataSource;
 
   public static void addAllowedUser(Principal pPrincipal, ServletRequest pKey) throws SQLException {
-    dbHelper(RESOURCE_REF, pKey).makeInsert(SQL_ADD_APP_PERM, "Failure to register access permission in database")
+    DBHelper dbHelper = getDbHelper(RESOURCE_REF, pKey);
+    try {
+      dbHelper.makeInsert(SQL_ADD_APP_PERM, "Failure to register access permission in database")
           .addParam(SQL_I_ADD_APP_PERM_COL_USER, pPrincipal.getName())
           .addParam(SQL_I_ADD_APP_PERM_COL_APPNAME, APPNAME)
           .execCommit();
+    } finally {
+      dbHelper.close();
+    }
   }
 
   public static boolean isAllowedUser(Principal pPrincipal, ServletRequest pKey) throws SQLException {
-    return dbHelper(RESOURCE_REF, pKey).makeQuery(SQL_CHECK_APP_PERM, "Failure to verify access permission in database")
+    DBHelper dbHelper = getDbHelper(RESOURCE_REF, pKey);
+    try {
+      return dbHelper.makeQuery(SQL_CHECK_APP_PERM, "Failure to verify access permission in database")
           .addParam(SQL_I_CHECK_APP_PERM_COL_USER, pPrincipal.getName())
           .addParam(SQL_I_CHECK_APP_PERM_COL_APPNAME, APPNAME)
           .execQueryNotEmpty();
+    } finally {
+      dbHelper.close();
+    }
   }
 
   public static String createLogoutURL(String pURI) {

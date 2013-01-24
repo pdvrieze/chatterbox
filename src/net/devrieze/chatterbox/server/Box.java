@@ -1,9 +1,10 @@
 package net.devrieze.chatterbox.server;
 
 import java.security.Principal;
-import java.util.Iterator;
 
 import javax.servlet.ServletRequest;
+
+import net.devrieze.util.db.DBIterable;
 
 
 /**
@@ -38,21 +39,12 @@ public class Box {
     return aLastIndex ;
   }
   
-  public Iterable<Message> getMessages() {
+  public DBIterable<Message> getMessages() {
     return ChatboxManager.getMessages(aBoxId, aKey);
   }
 
-  public Iterable<Message> getMessages(long start, long end) {
+  public DBIterable<Message> getMessages(long start, long end) {
     return ChatboxManager.getMessages(aBoxId, start, end, aKey);
-  }
-  
-  /**
-   * 
-   * @deprecated Just a wrapper over {@link #getMessages(long, long)}
-   */
-  @Deprecated
-  public Iterator<Message> iterator(long start, long end) {
-    return getMessages(start, end).iterator();
   }
 
   public Message addMessage(String pMessageBody, Principal pSender) {

@@ -210,20 +210,21 @@ public class ChatboxManager {
 
   public static Box getBox(String pBoxName, ServletRequest pKey) {
     ensureTables(pKey);
-    final DBQuery statement = dbHelper(DB_RESOURCE, pKey)
-    .makeQuery(SQL_GET_BOX_WITH_NAME, "Failure verifying chatbox")
-    .addParam(1, pBoxName);
-    BoxAdapterIterator it = new BoxAdapterIterator(statement,
-        statement.execQuery()
-        , pKey);
+    DBHelper dbHelper = getDbHelper(DB_RESOURCE, pKey);
     try {
-      if (it.hasNext()) {
-        return it.next();
-      } else {
-        return null;
+      final DBQuery statement = dbHelper.makeQuery(SQL_GET_BOX_WITH_NAME, "Failure verifying chatbox").addParam(1, pBoxName);
+      BoxAdapterIterator it = new BoxAdapterIterator(statement, statement.execQuery(), pKey);
+      try {
+        if (it.hasNext()) {
+          return it.next();
+        } else {
+          return null;
+        }
+      } finally {
+        it.closeStatement();
       }
     } finally {
-      it.closeStatement();
+      dbHelper.close();
     }
   }
 
@@ -232,34 +233,42 @@ public class ChatboxManager {
     _tables_ensured = true;
 
 
-    DBHelper helper = dbHelper(DB_RESOURCE, pKey);
-
-    Set<String> tables = new TreeSet<String>();
-    final DBQuery query = helper.makeQuery(SQL_HAS_TABLES);
-    for (String table: new StringAdapter(query, query.execQuery(), true)) {
-      tables.add(table);
-    }
-    boolean success = true;
-    boolean changed = false;
-    if (! tables.contains(unquote(TABLE_BOXES))) {
-      success = helper.makeQuery(SQL_CREATE_BOXES).exec();
-      changed = changed || success;
-    }
-    if (success && (! tables.contains(unquote(TABLE_MESSAGES)))) {
-      success = helper.makeQuery(SQL_CREATE_MESSAGES).exec();
-      changed = changed || success;
-    }
-    if (success && (! tables.contains(unquote(TABLE_TOKENS)))) {
-      success = helper.makeQuery(SQL_CREATE_TOKENS).exec();
-      changed = changed || success;
-    }
-    if (success) {
-      if (changed) {
-        helper.commit();
+    DBHelper dbHelper = getDbHelper(DB_RESOURCE, pKey);
+    try {
+      Set<String> tables = new TreeSet<String>();
+      final DBQuery query = dbHelper.makeQuery(SQL_HAS_TABLES);
+      StringAdapter stringAdapter = new StringAdapter(query, query.execQuery(), true);
+      try {
+        for (String table : stringAdapter.all()) {
+          tables.add(table);
+        }
+      } finally {
+        stringAdapter.close();
       }
-    } else {
-      helper.rollback();
-      throw new RuntimeException("Tables could not be created");
+      boolean success = true;
+      boolean changed = false;
+      if (! tables.contains(unquote(TABLE_BOXES))) {
+        success = dbHelper.makeQuery(SQL_CREATE_BOXES).exec();
+        changed = changed || success;
+      }
+      if (success && (! tables.contains(unquote(TABLE_MESSAGES)))) {
+        success = dbHelper.makeQuery(SQL_CREATE_MESSAGES).exec();
+        changed = changed || success;
+      }
+      if (success && (! tables.contains(unquote(TABLE_TOKENS)))) {
+        success = dbHelper.makeQuery(SQL_CREATE_TOKENS).exec();
+        changed = changed || success;
+      }
+      if (success) {
+        if (changed) {
+          dbHelper.commit();
+        }
+      } else {
+        dbHelper.rollback();
+        throw new RuntimeException("Tables could not be created");
+      }
+    } finally {
+      dbHelper.close();
     }
   }
 
@@ -278,64 +287,77 @@ public class ChatboxManager {
   }
 
   public static long getFirstIndex(int pBoxId, ServletRequest pKey) {
-    final Long result = dbHelper(DB_RESOURCE, pKey)
-        .makeQuery(SQL_GET_FIRST_INDEX, "Could not determine the first message")
-        .addParam(1, pBoxId)
-        .longQuery();
-    return result == null ? 0 : result.longValue();
+    DBHelper dbHelper = getDbHelper(DB_RESOURCE, pKey);
+    try {
+      final Long result = dbHelper.makeQuery(SQL_GET_FIRST_INDEX, "Could not determine the first message").addParam(1, pBoxId).longQuery();
+      return result == null ? 0 : result.longValue();
+
+    } finally {
+      dbHelper.close();
+    }
   }
 
   public static long getLastIndex(int pBoxId, ServletRequest pKey) {
-    final Long result = dbHelper(DB_RESOURCE, pKey)
-        .makeQuery(SQL_GET_LAST_INDEX, "Could not determine the last message")
-        .addParam(1, pBoxId)
-        .longQuery();
-    return result == null ? 0 : result.longValue();
+    DBHelper dbHelper = getDbHelper(DB_RESOURCE, pKey);
+    try {
+      final Long result = dbHelper.makeQuery(SQL_GET_LAST_INDEX, "Could not determine the last message").addParam(1, pBoxId).longQuery();
+      return result == null ? 0 : result.longValue();
+
+    } finally {
+      dbHelper.close();
+    }
   }
 
   public static void clearMessages(int pBoxId, ServletRequest pKey) {
-    dbHelper(DB_RESOURCE, pKey)
-        .makeQuery(SQL_CLEAR_BOX)
-        .addParam(1, pBoxId)
-        .execCommit();
+    DBHelper dbHelper = getDbHelper(DB_RESOURCE, pKey);
+    try {
+      dbHelper.makeQuery(SQL_CLEAR_BOX).addParam(1, pBoxId).execCommit();
+    } finally {
+      dbHelper.close();
+    }
   }
 
   public static void addMessage(int pBoxId, Message pMsg, ServletRequest pKey) {
-    DBHelper helper = dbHelper(DB_RESOURCE, pKey);
-    boolean retry;
-    do {
-      final Long oldIndex = helper.makeQuery(SQL_GET_LAST_INDEX, "Could not determine the last message")
-          .addParam(1, pBoxId)
-          .longQuery();
-      long newIndex=oldIndex==null ? 0 : 1+oldIndex.longValue();
+    DBHelper helper = getDbHelper(DB_RESOURCE, pKey);
+    try {
 
-      if (! helper.makeQuery(SQL_INSERT_MESSAGE)
-          .addParam(1, pBoxId)
-          .addParam(2, newIndex)
-          .addParam(3, pMsg.getSender())
-          .addParam(4, pMsg.getMessageBody())
-          .addParam(5, pMsg.getMsgTime())
-          .execCommit()) {
-        long idx2 = 1+helper.makeQuery(SQL_GET_LAST_INDEX, "Could not determine the last message")
+      boolean retry;
+      do {
+        final Long oldIndex = helper.makeQuery(SQL_GET_LAST_INDEX, "Could not determine the last message")
             .addParam(1, pBoxId)
             .longQuery();
-        retry = newIndex!=idx2;
-      } else {
-        retry = false;
-      }
-    } while (retry);
+        long newIndex=oldIndex==null ? 0 : 1+oldIndex.longValue();
+
+        if (! helper.makeQuery(SQL_INSERT_MESSAGE)
+                    .addParam(1, pBoxId)
+                    .addParam(2, newIndex)
+                    .addParam(3, pMsg.getSender())
+                    .addParam(4, pMsg.getMessageBody())
+                    .addParam(5, pMsg.getMsgTime())
+                    .execCommit()) {
+          long idx2 = helper.makeQuery(SQL_GET_LAST_INDEX, "Could not determine the last message")
+              .addParam(1, pBoxId)
+              .longQuery() + 1;
+          retry = newIndex!=idx2;
+        } else {
+          retry = false;
+        }
+      } while (retry);
+    } finally {
+      helper.close();
+    }
   }
 
   public static MessageAdapter getMessages(int pBoxId, ServletRequest pKey) {
-    final DBQuery statement = dbHelper(DB_RESOURCE, pKey)
+    final DBQuery statement = getDbHelper(DB_RESOURCE, pKey)
         .makeQuery(SQL_QUERY_ALL_MESSAGES)
         .addParam(1, pBoxId);
     ResultSet rs = statement.execQuery();
     return new MessageAdapter(statement, rs, true);
   }
 
-  public static Iterable<Message> getMessages(int pBoxId, long pStart, long pEnd, ServletRequest pKey) {
-    final DBQuery statement = dbHelper(DB_RESOURCE, pKey)
+  public static DBIterable<Message> getMessages(int pBoxId, long pStart, long pEnd, ServletRequest pKey) {
+    final DBQuery statement = getDbHelper(DB_RESOURCE, pKey)
         .makeQuery(SQL_QUERY_SOME_MESSAGES)
         .addParam(1, pBoxId)
         .addParam(2, pStart)
@@ -344,8 +366,8 @@ public class ChatboxManager {
     return new MessageAdapter(statement, rs, true);
   }
 
-  public static Iterable<Box> getBoxes(ServletRequest pKey) {
-    final DBQuery query = dbHelper(DB_RESOURCE, pKey)
+  public static DBIterable<Box> getBoxes(ServletRequest pKey) {
+    final DBQuery query = getDbHelper(DB_RESOURCE, pKey)
         .makeQuery("SELECT * FROM "+TABLE_BOXES);
     ResultSet rs = query.execQuery();
     return new BoxAdapter(query, rs, pKey, true);
@@ -357,10 +379,15 @@ public class ChatboxManager {
   }
 
   public static boolean isValidToken(String pToken, ServletRequest pKey) {
-    return dbHelper(DB_RESOURCE, pKey)
-        .makeQuery("SELECT * FROM "+TABLE_TOKENS+" WHERE "+COL_TOKENNAME+"=?")
-        .addParam(1, pToken)
-        .execQueryNotEmpty();
+    DBHelper dbHelper = getDbHelper(DB_RESOURCE, pKey);
+    try {
+      return dbHelper
+          .makeQuery("SELECT * FROM " + TABLE_TOKENS + " WHERE " + COL_TOKENNAME + "=?")
+          .addParam(1, pToken)
+          .execQueryNotEmpty();
+    } finally {
+      dbHelper.close();
+    }
   }
 
   public static boolean isSystemAdmin(Principal pUserPrincipal) {
@@ -368,26 +395,35 @@ public class ChatboxManager {
     // TODO Don't hard code this, but look it up.
   }
 
-  public static Iterable<String> getAuthTokens(ServletRequest pKey) {
-    final DBQuery statement = dbHelper(DB_RESOURCE, pKey)
+  public static DBIterable<String> getAuthTokens(ServletRequest pKey) {
+    final DBQuery statement = getDbHelper(DB_RESOURCE, pKey)
         .makeQuery(SQL_GET_TOKENS);
     return new StringAdapter(statement, statement.execQuery(), true);
   }
 
   public static Box createBox(String pBoxName, String pBoxOwner, ServletRequest pKey) {
-    dbHelper(DB_RESOURCE, pKey)
-        .makeInsert(SQL_INSERT_BOX)
+    DBHelper dbHelper = getDbHelper(DB_RESOURCE, pKey);
+    try {
+      dbHelper.makeInsert(SQL_INSERT_BOX)
         .addParam(1, pBoxName)
         .addParam(2, pBoxOwner)
         .execCommit();
+    } finally {
+      dbHelper.close();
+    }
     return getBox(pBoxName, pKey);
   }
 
   public static void removeAuthToken(String pToken, ServletRequest pKey) {
-    dbHelper(DB_RESOURCE, pKey)
-        .makeQuery(SQL_REMOVE_TOKEN)
-        .addParam(1, pToken)
-        .execCommit();
+    DBHelper dbHelper = getDbHelper(DB_RESOURCE, pKey);
+    try {
+      dbHelper
+          .makeQuery(SQL_REMOVE_TOKEN)
+          .addParam(1, pToken)
+          .execCommit();
+    } finally {
+      dbHelper.close();
+    }
   }
 
   public static void destroy() {

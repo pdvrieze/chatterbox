@@ -17,6 +17,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import net.devrieze.util.db.DBHelper;
+import net.devrieze.util.db.DBIterable;
 
 import org.atmosphere.cpr.Broadcaster;
 import org.atmosphere.cpr.Meteor;
@@ -284,8 +285,13 @@ public class ChatterboxServlet extends HttpServlet {
     PrintWriter out = resp.getWriter();
     out.append("<?xml version=\"1.0\"?>\n");
     out.append("<authTokens>\n");
-    for(String s:ChatboxManager.getAuthTokens(pReq)){
-      out.append("  <authToken>").append(s).append("</authToken>\n");
+    DBIterable<String> authTokens = ChatboxManager.getAuthTokens(pReq);
+    try {
+      for (String s : authTokens.all()) {
+        out.append("  <authToken>").append(s).append("</authToken>\n");
+      }
+    } finally {
+      authTokens.close();
     }
     out.append("</authTokens>");
     return true;
@@ -394,8 +400,13 @@ public class ChatterboxServlet extends HttpServlet {
         }
       }
 
-      for (Message m:b.getMessages(start, end)) {
-        out.println(m.toXML());
+      DBIterable<Message> messages = b.getMessages(start, end);
+      try {
+        for (Message m : messages.all()) {
+          out.println(m.toXML());
+        }
+      } finally {
+        messages.close();
       }
 
     } finally {
@@ -412,15 +423,20 @@ public class ChatterboxServlet extends HttpServlet {
     out.println("<?xml version=\"1.0\"?>");
     out.println("<boxes>");
     try {
-      for (Box b:ChatboxManager.getBoxes(pReq)) {
-        out.print("  <box");
-        final CharSequence name = b.getName();
-        if (DEFAULT_BOX.equals(name)) {
-          out.print(" default=\"true\"");
+      DBIterable<Box> boxes = ChatboxManager.getBoxes(pReq);
+      try {
+        for (Box b : boxes.all()) {
+          out.print("  <box");
+          final CharSequence name = b.getName();
+          if (DEFAULT_BOX.equals(name)) {
+            out.print(" default=\"true\"");
+          }
+          out.print('>');
+          out.print(Util.encodeHtml(name));
+          out.println("</box>");
         }
-        out.print('>');
-        out.print(Util.encodeHtml(name));
-        out.println("</box>");
+      } finally {
+        boxes.close();
       }
     } finally {
       out.println("</boxes>");
