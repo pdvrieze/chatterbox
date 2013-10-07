@@ -7,6 +7,7 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.security.Principal;
+import java.sql.SQLException;
 import java.util.logging.Logger;
 
 import javax.servlet.ServletContext;
@@ -258,18 +259,21 @@ public class ChatterboxServlet extends HttpServlet {
       return true;
     }
     resp.setContentType("text/xml; charset=utf-8");
-    BufferedReader in = req.getReader();
 
-    // Assume most text will be ascii and as such contentlength == string length
-    char[] buffer = new char[contentLength];
     StringBuilder message = new StringBuilder(contentLength);
-    {
-      int read =  in.read(buffer);
-      while (read >=0) {
-        message.append(buffer,0,read);
-        read = in.read(buffer);
+    try(BufferedReader in = req.getReader()) {
+  
+      // Assume most text will be ascii and as such contentlength == string length
+      char[] buffer = new char[contentLength];
+      {
+        int read =  in.read(buffer);
+        while (read >=0) {
+          message.append(buffer,0,read);
+          read = in.read(buffer);
+        }
       }
     }
+    
     Message m = channelManager.createNewMessageAndNotify(Util.sanitizeHtml(message.toString()), req.getUserPrincipal(), req);
     resp.getWriter().append("<?xml version=\"1.0\"?>\n").append(m.toXML());
     resp.setStatus(HttpServletResponse.SC_OK);
@@ -282,18 +286,22 @@ public class ChatterboxServlet extends HttpServlet {
       return true;
     }
     resp.setContentType("text/xml; charset=utf-8");
-    PrintWriter out = resp.getWriter();
-    out.append("<?xml version=\"1.0\"?>\n");
-    out.append("<authTokens>\n");
-    DBIterable<String> authTokens = ChatboxManager.getAuthTokens(pReq);
-    try {
-      for (String s : authTokens.all()) {
-        out.append("  <authToken>").append(s).append("</authToken>\n");
+    try(PrintWriter out = resp.getWriter()) {
+      out.append("<?xml version=\"1.0\"?>\n");
+      out.append("<authTokens>\n");
+      try (DBIterable<String> authTokens = ChatboxManager.getAuthTokens(pReq)) {
+        for (String s : authTokens.all()) {
+          out.append("  <authToken>").append(s).append("</authToken>\n");
+        }
+      } catch (Exception e) {
+        if (e instanceof RuntimeException) {
+          throw (RuntimeException) e;
+        } else {
+          throw new RuntimeException(e);
+        }
       }
-    } finally {
-      authTokens.close();
+      out.append("</authTokens>");
     }
-    out.append("</authTokens>");
     return true;
   }
 
@@ -345,8 +353,7 @@ public class ChatterboxServlet extends HttpServlet {
     ServletContext context = req.getSession().getServletContext();
     String path2=context.getRealPath(path);
 
-    FileReader in = new FileReader(path2);
-    try {
+    try (FileReader in = new FileReader(path2)){
       char[] buffer = new char[10000];
       StringBuilder result = new StringBuilder();
       int c = in.read(buffer);
@@ -357,8 +364,6 @@ public class ChatterboxServlet extends HttpServlet {
       resp.getWriter().append(result);
       resp.setStatus(HttpServletResponse.SC_OK);
       return true;
-    } finally {
-      in.close();
     }
   }
 
@@ -400,13 +405,12 @@ public class ChatterboxServlet extends HttpServlet {
         }
       }
 
-      DBIterable<Message> messages = b.getMessages(start, end);
-      try {
+      try (DBIterable<Message> messages = b.getMessages(start, end)){
         for (Message m : messages.all()) {
           out.println(m.toXML());
         }
-      } finally {
-        messages.close();
+      } catch (SQLException e) {
+        throw new RuntimeException(e);
       }
 
     } finally {
@@ -419,12 +423,10 @@ public class ChatterboxServlet extends HttpServlet {
 
   private boolean handleBoxes(HttpServletRequest pReq, HttpServletResponse pResp) throws IOException {
     pResp.setContentType("text/xml; charset=utf-8");
-    PrintWriter out = pResp.getWriter();
-    out.println("<?xml version=\"1.0\"?>");
-    out.println("<boxes>");
-    try {
-      DBIterable<Box> boxes = ChatboxManager.getBoxes(pReq);
-      try {
+    try(PrintWriter out = pResp.getWriter()) {
+      out.println("<?xml version=\"1.0\"?>");
+      out.println("<boxes>");
+      try(DBIterable<Box> boxes = ChatboxManager.getBoxes(pReq)) {
         for (Box b : boxes.all()) {
           out.print("  <box");
           final CharSequence name = b.getName();
@@ -435,14 +437,14 @@ public class ChatterboxServlet extends HttpServlet {
           out.print(Util.encodeHtml(name));
           out.println("</box>");
         }
+      } catch (SQLException e) {
+        throw new RuntimeException(e);
       } finally {
-        boxes.close();
+        out.println("</boxes>");
       }
-    } finally {
-      out.println("</boxes>");
+      pResp.setStatus(HttpServletResponse.SC_OK);
+      return true;
     }
-    pResp.setStatus(HttpServletResponse.SC_OK);
-    return true;
   }
 
   private boolean handleClear(HttpServletRequest pReq, HttpServletResponse pResp) throws IOException {

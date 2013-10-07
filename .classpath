@@ -2,21 +2,17 @@
 <classpath>
 	<classpathentry kind="con" path="com.google.gwt.eclipse.core.GWT_CONTAINER"/>
 	<classpathentry kind="src" path="src"/>
-	<classpathentry kind="lib" path="war/WEB-INF/lib/atmosphere-runtime-0.9.7.jar" sourcepath="atmosphere-runtime-0.9.7-sources.jar">
-		<attributes>
-			<attribute name="javadoc_location" value="jar:platform:/resource/Chatterbox/atmosphere-runtime-0.9.7-javadoc.jar!/"/>
-		</attributes>
-	</classpathentry>
-	<classpathentry kind="lib" path="war/WEB-INF/lib/atmosphere-gwt-common-0.9.7.jar" sourcepath="/home/paul/.m2/repository/org/atmosphere/atmosphere-gwt-common/0.9.7/atmosphere-gwt-common-0.9.7-sources.jar"/>
-	<classpathentry kind="lib" path="war/WEB-INF/lib/atmosphere-gwt-server-0.9.7.jar" sourcepath="atmosphere-gwt-server-0.9.7-sources.jar"/>
-	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/sun-jdk-1.6">
+	<classpathentry combineaccessrules="false" kind="src" path="/DarwinCommon"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/DarwinJavaApi"/>
+	<classpathentry kind="con" path="org.eclipse.jst.server.core.container/org.eclipse.jst.server.tomcat.runtimeTarget/Apache Tomcat v6.0"/>
+	<classpathentry kind="lib" path="lib/atmosphere-gwt-client-1.0.12.jar"/>
+	<classpathentry kind="lib" path="lib/atmosphere-gwt-common-1.0.12.jar"/>
+	<classpathentry kind="lib" path="war/WEB-INF/lib/atmosphere-gwt-server-1.0.12.jar"/>
+	<classpathentry kind="lib" path="war/WEB-INF/lib/atmosphere-runtime-1.0.12.jar"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/oracle-jdk-1.7">
 		<attributes>
 			<attribute name="owner.project.facets" value="java"/>
 		</attributes>
 	</classpathentry>
-	<classpathentry combineaccessrules="false" kind="src" path="/DarwinCommon"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/DarwinJavaApi"/>
-	<classpathentry kind="con" path="org.eclipse.jst.server.core.container/org.eclipse.jst.server.tomcat.runtimeTarget/Apache Tomcat v6.0"/>
-	<classpathentry kind="lib" path="lib/atmosphere-gwt-client-0.9.7.jar"/>
 	<classpathentry kind="output" path="war/WEB-INF/classes"/>
 </classpath>

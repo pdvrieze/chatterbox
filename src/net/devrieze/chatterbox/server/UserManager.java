@@ -1,6 +1,6 @@
 package net.devrieze.chatterbox.server;
 
-import static net.devrieze.util.db.DBHelper.dbHelper;
+import static net.devrieze.util.db.DBHelper.*;
 
 import java.security.Principal;
 import java.sql.SQLException;
