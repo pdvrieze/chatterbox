@@ -9,7 +9,7 @@
 	</classpathentry>
 	<classpathentry kind="lib" path="war/WEB-INF/lib/atmosphere-gwt-common-0.9.7.jar" sourcepath="/home/paul/.m2/repository/org/atmosphere/atmosphere-gwt-common/0.9.7/atmosphere-gwt-common-0.9.7-sources.jar"/>
 	<classpathentry kind="lib" path="war/WEB-INF/lib/atmosphere-gwt-server-0.9.7.jar" sourcepath="atmosphere-gwt-server-0.9.7-sources.jar"/>
-	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/sun-jdk-1.6">
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.7">
 		<attributes>
 			<attribute name="owner.project.facets" value="java"/>
 		</attributes>
