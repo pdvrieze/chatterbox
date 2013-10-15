@@ -74,7 +74,7 @@ public class ChatterBoxQueue implements Window.ClosingHandler{
     }
 
     @Override
-    public void onMessage(List<? extends Serializable> pMessages) {
+    public void onMessage(List<?> pMessages) {
       handleMessagesReceived(pMessages);
       eventBus.fireEventFromSource(new StatusEvent(StatusLevel.DEBUG, "Received channel messages (#"+pMessages.size()+")"),ChatterBoxQueue.this);
     }
