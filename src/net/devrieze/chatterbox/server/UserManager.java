@@ -8,6 +8,7 @@ import java.sql.SQLException;
 import javax.servlet.ServletRequest;
 import javax.sql.DataSource;
 
+import uk.ac.bournemouth.darwin.catalina.realm.DarwinUserPrincipal;
 import net.devrieze.util.db.DBHelper;
 
 public class UserManager {
@@ -61,6 +62,9 @@ public class UserManager {
   }
 
   public static String getCurrentUserEmail(Principal p) {
+    if (p instanceof DarwinUserPrincipal) {
+      return ((DarwinUserPrincipal) p).getEmail().toString();
+    } 
     return p.getName()+"@bournemouth.ac.uk";
   }
 
