@@ -1,5 +1,7 @@
 package net.devrieze.chatterbox.client;
 
+import java.util.Date;
+
 import net.devrieze.chatterbox.client.StatusEvent.StatusLevel;
 
 import com.google.gwt.core.client.GWT;
@@ -12,6 +14,8 @@ import com.google.gwt.event.dom.client.KeyCodes;
 import com.google.gwt.event.dom.client.KeyUpEvent;
 import com.google.gwt.event.shared.EventBus;
 import com.google.gwt.event.shared.SimpleEventBus;
+import com.google.gwt.i18n.client.DateTimeFormat;
+import com.google.gwt.i18n.client.DateTimeFormat.PredefinedFormat;
 import com.google.gwt.resources.client.CssResource;
 import com.google.gwt.uibinder.client.UiBinder;
 import com.google.gwt.uibinder.client.UiField;
@@ -155,12 +159,19 @@ public class ChatterboxUI extends Composite implements UpdateMessageEvent.Handle
       } else {
         mHtml.append("<div class=\"odd\">");
       }
-      mHtml.append("<b class=\"sender\">").append(m.getSender()).append(": </b>");
+      mHtml.append("<b class=\"sender\">").append(m.getSender()).append("</b> [<i>")
+           .append(epochToString(m.getMsgTime())).append("</i>]: ");
       mHtml.append(m.getMessageBody());
       mHtml.append("</div>");
 
     }
     return mHtml.toString();
+  }
+
+  private Object epochToString(long pMsgTime) {
+    Date d = new Date(pMsgTime);
+    DateTimeFormat format = DateTimeFormat.getFormat(PredefinedFormat.DATE_TIME_SHORT);
+    return format.format(d);
   }
 
   @Override
