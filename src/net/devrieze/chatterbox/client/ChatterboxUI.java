@@ -12,18 +12,23 @@ import com.google.gwt.event.dom.client.KeyCodes;
 import com.google.gwt.event.dom.client.KeyUpEvent;
 import com.google.gwt.event.shared.EventBus;
 import com.google.gwt.event.shared.SimpleEventBus;
+import com.google.gwt.http.client.UrlBuilder;
 import com.google.gwt.resources.client.CssResource;
 import com.google.gwt.uibinder.client.UiBinder;
 import com.google.gwt.uibinder.client.UiField;
 import com.google.gwt.uibinder.client.UiHandler;
 import com.google.gwt.user.client.Window;
-import com.google.gwt.user.client.ui.*;
+import com.google.gwt.user.client.ui.Button;
+import com.google.gwt.user.client.ui.Composite;
+import com.google.gwt.user.client.ui.Label;
+import com.google.gwt.user.client.ui.TextBox;
+import com.google.gwt.user.client.ui.Widget;
 
 
 /**
  * Entry point classes define <code>onModuleLoad()</code>.
  */
-public class ChatterboxUI extends Composite implements UpdateMessageEvent.Handler, MoveMessagesEvent.Handler, StatusEvent.Handler {
+public class ChatterboxUI extends Composite implements UpdateMessageEvent.Handler, MoveMessagesEvent.Handler, StatusEvent.Handler, ReLoginEvent.Handler {
 
   public static final String LOGGER = "chatterbox";
 
@@ -58,6 +63,7 @@ public class ChatterboxUI extends Composite implements UpdateMessageEvent.Handle
 
     eventBus.addHandler(UpdateMessageEvent.TYPE, this);
     eventBus.addHandler(StatusEvent.TYPE, this);
+    eventBus.addHandler(ReLoginEvent.TYPE, this);
 
     messageQueue = new ChatterBoxQueue(eventBus, true);
     messageQueue.requestMessages();
@@ -170,6 +176,14 @@ public class ChatterboxUI extends Composite implements UpdateMessageEvent.Handle
       errorLabel.setText(messageText);
     }
     GWT.log(messageText, e.getException());
+  }
+
+  @Override
+  public void onReLogin(ReLoginEvent e) {
+    UrlBuilder url = new UrlBuilder();
+    url.setPath("/accounts/login")
+       .setParameter("redirect", Window.Location.getHref());
+    Window.Location.assign(url.buildString());
   }
 
 }

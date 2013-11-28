@@ -32,7 +32,7 @@ public class AuthFilter implements Filter {
     try {
       doFilter((HttpServletRequest)req, (HttpServletResponse) resp, filterChain);
     } finally {
-      getLogger().warning("Closing database connection for req: "+req);
+      getLogger().fine("Closing database connection for req: "+req);
       DBHelper.closeConnections(req);
     }
   }
