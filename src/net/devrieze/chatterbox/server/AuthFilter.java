@@ -8,13 +8,18 @@ import java.sql.SQLException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import javax.servlet.*;
+import javax.servlet.Filter;
+import javax.servlet.FilterChain;
+import javax.servlet.FilterConfig;
+import javax.servlet.ServletException;
+import javax.servlet.ServletRequest;
+import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import uk.ac.bournemouth.darwin.html.util.DarwinHtml;
 
-import net.devrieze.util.db.DBHelper;
+import net.devrieze.util.db.DBConnection;
 
 
 public class AuthFilter implements Filter {
@@ -33,7 +38,6 @@ public class AuthFilter implements Filter {
       doFilter((HttpServletRequest)req, (HttpServletResponse) resp, filterChain);
     } finally {
       getLogger().fine("Closing database connection for req: "+req);
-      DBHelper.closeConnections(req);
     }
   }
 
@@ -66,13 +70,18 @@ public class AuthFilter implements Filter {
           String extramsg="";
           if ("POST".equals(req.getMethod())){
             String token = req.getParameter("key");
-            if (token!=null && token.length()>0) {
-              if (ChatboxManager.isValidToken(token, req)) {
-                addAllowedUser(principal, req);
-                pResponse.sendRedirect(pResponse.encodeRedirectURL(req.getRequestURI()));
-                return;
-              } else {
-                extramsg="The token is not right, you will not be authorized to use this app.";
+            if (token != null && token.length() > 0) {
+              try (DBConnection connection = ChatboxManager.getConnection()){
+                if (ChatboxManager.isValidToken(connection, token, req)) {
+                  addAllowedUser(principal, req);
+                  pResponse.sendRedirect(pResponse.encodeRedirectURL(req.getRequestURI()));
+                  return;
+                } else {
+                  extramsg = "The token is not right, you will not be authorized to use this app.";
+                }
+
+              } catch (SQLException e) {
+                throw new ServletException(e);
               }
             } else {
               extramsg="No token received, you will not be authorized to use this app.";
