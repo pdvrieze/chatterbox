@@ -6,10 +6,6 @@ import java.sql.SQLException;
 import java.util.Set;
 import java.util.TreeSet;
 
-import javax.servlet.ServletRequest;
-
-import static net.devrieze.util.db.DBConnection.DBHelper.*;
-
 import net.devrieze.annotations.NotNull;
 import net.devrieze.util.db.DBConnection;
 import net.devrieze.util.db.DBConnection.DBHelper;
@@ -25,22 +21,16 @@ public class ChatboxManager {
 
   private static class BoxAdapter extends ResultSetAdapter<Box> {
 
-    private ServletRequest aKey;
     private boolean aAutoClose;
 
-    public BoxAdapter(DBStatement pStatement, ResultSet pResultSet, ServletRequest pKey) {
-      this(pStatement, pResultSet, pKey, false);
-    }
-
-    public BoxAdapter(DBStatement pStatement, ResultSet pResultSet, ServletRequest pKey, boolean pAutoClose) {
+    public BoxAdapter(DBStatement pStatement, ResultSet pResultSet, boolean pAutoClose) {
       super(pStatement, pResultSet);
       aAutoClose = pAutoClose;
-      aKey = pKey;
     }
 
     @Override
     public BoxAdapterIterator iterator() {
-      return new BoxAdapterIterator(aStatement, aResultSet, aKey, aAutoClose);
+      return new BoxAdapterIterator(aStatement, aResultSet, aAutoClose);
     }
 
   }
@@ -50,16 +40,13 @@ public class ChatboxManager {
     private int aBoxIdIdx = -1;
     private int aNameIdx = -1;
     private int aOwnerIdx = -1;
-    private final ServletRequest aKey;
 
-    public BoxAdapterIterator(DBStatement pStatement, ResultSet pResultSet, ServletRequest pKey) {
+    public BoxAdapterIterator(DBStatement pStatement, ResultSet pResultSet) {
       super(pStatement, pResultSet);
-      aKey = pKey;
     }
 
-    public BoxAdapterIterator(DBStatement pStatement, ResultSet pResultSet, ServletRequest pKey, boolean pAutoClose) {
+    public BoxAdapterIterator(DBStatement pStatement, ResultSet pResultSet, boolean pAutoClose) {
       super(pStatement, pResultSet, pAutoClose);
-      aKey = pKey;
     }
 
     @Override
@@ -81,7 +68,7 @@ public class ChatboxManager {
       int boxId = pResultSet.getInt(aBoxIdIdx);
       String boxName = pResultSet.getString(aNameIdx);
       String owner = pResultSet.getString(aOwnerIdx);
-      return new Box(boxId, boxName, owner, aKey);
+      return new Box(boxId, boxName, owner);
     }
 
   }
@@ -167,6 +154,7 @@ public class ChatboxManager {
 
   private static final String COL_TOKENNAME = "`name`";
 
+  @NotNull
   private static final String SQL_REMOVE_TOKEN = "DELETE FROM "+TABLE_TOKENS+" WHERE "+COL_TOKENNAME+" = ?";
 
   @NotNull
@@ -236,11 +224,11 @@ public class ChatboxManager {
 
   private static DBHelper aHelper;
 
-  public static Box getBox(@NotNull DBConnection pConnection, String pBoxName, ServletRequest pKey) throws SQLException {
+  public static Box getBox(@NotNull DBConnection pConnection, String pBoxName) throws SQLException {
     ensureTables(pConnection);
 
     try (final DBQuery statement = pConnection.makeQuery(SQL_GET_BOX_WITH_NAME, "Failure verifying chatbox").addParam(1, pBoxName);
-        BoxAdapterIterator it = new BoxAdapterIterator(statement, statement.execQuery(), pKey)) {
+        BoxAdapterIterator it = new BoxAdapterIterator(statement, statement.execQuery())) {
       if (it.hasNext()) {
         return it.next();
       } else {
@@ -299,21 +287,21 @@ public class ChatboxManager {
     return result;
   }
 
-  public static long getFirstIndex(@NotNull DBConnection pConnection, int pBoxId, ServletRequest pKey) throws SQLException {
+  public static long getFirstIndex(@NotNull DBConnection pConnection, int pBoxId) {
     final Long result = pConnection.makeQuery(SQL_GET_FIRST_INDEX, "Could not determine the first message").addParam(1, pBoxId).longQuery();
     return result == null ? 0 : result.longValue();
   }
 
-  public static long getLastIndex(@NotNull DBConnection pConnection, int pBoxId, ServletRequest pKey) throws SQLException {
+  public static long getLastIndex(@NotNull DBConnection pConnection, int pBoxId) {
     final Long result = pConnection.makeQuery(SQL_GET_LAST_INDEX, "Could not determine the last message").addParam(1, pBoxId).longQuery();
     return result == null ? 0 : result.longValue();
   }
 
-  public static void clearMessages(@NotNull DBConnection pConnection, int pBoxId, ServletRequest pKey) throws SQLException {
+  public static void clearMessages(@NotNull DBConnection pConnection, int pBoxId) throws SQLException {
     pConnection.makeQuery(SQL_CLEAR_BOX).addParam(1, pBoxId).execCommit();
   }
 
-  public static void addMessage(@NotNull DBConnection pConnection, int pBoxId, Message pMsg, ServletRequest pKey) throws SQLException {
+  public static void addMessage(@NotNull DBConnection pConnection, int pBoxId, Message pMsg) throws SQLException {
     boolean retry;
     do {
       final Long oldIndex = pConnection.makeQuery(SQL_GET_LAST_INDEX, "Could not determine the last message")
@@ -339,7 +327,7 @@ public class ChatboxManager {
   }
 
   @SuppressWarnings("resource")
-  public static MessageAdapter getMessages(@NotNull DBConnection pConnection, int pBoxId, ServletRequest pKey) {
+  public static MessageAdapter getMessages(@NotNull DBConnection pConnection, int pBoxId) {
 
     final DBQuery statement = pConnection
         .makeQuery(SQL_QUERY_ALL_MESSAGES)
@@ -349,7 +337,7 @@ public class ChatboxManager {
   }
 
   @SuppressWarnings("resource")
-  public static DBIterable<Message> getMessages(@NotNull DBConnection pConnection, int pBoxId, long pStart, long pEnd, ServletRequest pKey) {
+  public static DBIterable<Message> getMessages(@NotNull DBConnection pConnection, int pBoxId, long pStart, long pEnd) {
     final DBQuery statement = pConnection
         .makeQuery(SQL_QUERY_SOME_MESSAGES)
         .addParam(1, pBoxId)
@@ -360,11 +348,11 @@ public class ChatboxManager {
   }
 
   @SuppressWarnings("resource")
-  public static DBIterable<Box> getBoxes(@NotNull DBConnection pConnection, ServletRequest pKey) {
+  public static DBIterable<Box> getBoxes(@NotNull DBConnection pConnection) {
     final DBQuery query = pConnection
         .makeQuery("SELECT * FROM "+TABLE_BOXES);
     ResultSet rs = query.execQuery();
-    return new BoxAdapter(query, rs, pKey, true);
+    return new BoxAdapter(query, rs, true);
   }
 
   public static boolean isAdmin(Box pBox, Principal pUserPrincipal) {
@@ -372,7 +360,7 @@ public class ChatboxManager {
     return owner!=null && owner.equals(pUserPrincipal.getName());
   }
 
-  public static boolean isValidToken(@NotNull DBConnection pConnection, String pToken, ServletRequest pKey) {
+  public static boolean isValidToken(@NotNull DBConnection pConnection, String pToken) {
     return pConnection
         .makeQuery("SELECT * FROM " + TABLE_TOKENS + " WHERE " + COL_TOKENNAME + "=?")
         .addParam(1, pToken)
@@ -385,20 +373,20 @@ public class ChatboxManager {
   }
 
   @SuppressWarnings("resource")
-  public static DBIterable<String> getAuthTokens(@NotNull DBConnection pConnection, ServletRequest pKey) {
+  public static DBIterable<String> getAuthTokens(@NotNull DBConnection pConnection) {
     final DBQuery statement = pConnection.makeQuery(SQL_GET_TOKENS);
     return new StringAdapter(statement, statement.execQuery(), true);
   }
 
-  public static Box createBox(@NotNull DBConnection pConnection, String pBoxName, String pBoxOwner, ServletRequest pKey) throws SQLException {
+  public static Box createBox(@NotNull DBConnection pConnection, String pBoxName, String pBoxOwner) throws SQLException {
     pConnection.makeInsert(SQL_INSERT_BOX)
       .addParam(1, pBoxName)
       .addParam(2, pBoxOwner)
       .execCommit();
-    return getBox(pConnection, pBoxName, pKey);
+    return getBox(pConnection, pBoxName);
   }
 
-  public static void removeAuthToken(@NotNull DBConnection pConnection, String pToken, ServletRequest pKey) throws SQLException {
+  public static void removeAuthToken(@NotNull DBConnection pConnection, String pToken) throws SQLException {
     pConnection
         .makeQuery(SQL_REMOVE_TOKEN)
         .addParam(1, pToken)
@@ -413,7 +401,7 @@ public class ChatboxManager {
   public static DBConnection getConnection() throws SQLException {
     if (aHelper==null) {
       synchronized(ChatboxManager.class) {
-        aHelper = DBHelper.getDbHelper(DB_RESOURCE, null);
+        aHelper = DBHelper.getDbHelper(DB_RESOURCE);
       }
     }
     return aHelper.getConnection();

@@ -5,13 +5,12 @@ import java.sql.SQLException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import javax.servlet.ServletRequest;
-
 import org.atmosphere.cpr.AtmosphereResource;
 import org.atmosphere.cpr.Broadcaster;
 import org.atmosphere.cpr.BroadcasterFactory;
 import org.atmosphere.websocket.WebSocketEventListenerAdapter;
 
+import net.devrieze.annotations.NotNull;
 import net.devrieze.util.db.DBConnection;
 
 
@@ -20,7 +19,7 @@ public class ChannelManager extends WebSocketEventListenerAdapter {
   static final String BROADCASTERNAME = "chatterbox";
   private Broadcaster aBroadCaster;
 
-  Message createNewMessageAndNotify(String messageBody, Principal pSender, ServletRequest pKey) throws SQLException {
+  Message createNewMessageAndNotify(String messageBody, Principal pSender) throws SQLException {
     Message message;
     try (DBConnection connection = ChatboxManager.getConnection()) {
       Box box = getDefaultBox(connection);
@@ -44,8 +43,8 @@ public class ChannelManager extends WebSocketEventListenerAdapter {
     return message;
   }
 
-  private Box getDefaultBox(DBConnection pConnection) throws SQLException {
-    return ChatboxManager.getBox(pConnection, ChatterboxServlet.DEFAULT_BOX, null);
+  private Box getDefaultBox(@NotNull DBConnection pConnection) throws SQLException {
+    return ChatboxManager.getBox(pConnection, ChatterboxServlet.DEFAULT_BOX);
   }
 
   public Broadcaster getBroadcaster() {

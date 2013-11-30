@@ -19,6 +19,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import uk.ac.bournemouth.darwin.html.util.DarwinHtml;
 
+import net.devrieze.annotations.NotNull;
 import net.devrieze.util.db.DBConnection;
 
 
@@ -45,7 +46,7 @@ public class AuthFilter implements Filter {
     return Logger.getLogger(getClass().getName());
   }
 
-  public void doFilter(HttpServletRequest req, HttpServletResponse pResponse, FilterChain filterChain) throws IOException, ServletException {
+  public void doFilter(HttpServletRequest req, @NotNull HttpServletResponse pResponse, FilterChain filterChain) throws IOException, ServletException {
 //    System.err.println("dofilter called for "+req.getRequestURI());
     getLogger().log(Level.FINE, "Calling filter for: "+req.getRequestURI());
     Principal principal = getPrincipal(req);
@@ -63,7 +64,7 @@ public class AuthFilter implements Filter {
 
     try {
       if (principal!=null) {
-        if (isAllowed(principal, req)) {
+        if (isAllowed(principal)) {
           filterChain.doFilter(req, pResponse);
           return;
         } else {
@@ -72,8 +73,8 @@ public class AuthFilter implements Filter {
             String token = req.getParameter("key");
             if (token != null && token.length() > 0) {
               try (DBConnection connection = ChatboxManager.getConnection()){
-                if (ChatboxManager.isValidToken(connection, token, req)) {
-                  addAllowedUser(principal, req);
+                if (ChatboxManager.isValidToken(connection, token)) {
+                  addAllowedUser(principal);
                   pResponse.sendRedirect(pResponse.encodeRedirectURL(req.getRequestURI()));
                   return;
                 } else {
@@ -88,35 +89,37 @@ public class AuthFilter implements Filter {
             }
           }
           pResponse.setContentType("text/html; charset=utf8");
-          PrintWriter out = pResponse.getWriter();
-          out.println("<!DOCTYPE html>\n<html><head><title>Provide access token</title></head><body>");
-          out.print("<div style='margin:5em; border: 1px solid black; padding: 2em;'><div style='margin-bottom:2em;'>");
-          out.print(extramsg);
-          out.print("</div><form method='POST' action='"+req.getRequestURI()+"'><div>");
-          out.println("Please provide your access token</div><div><input type='text' name='key' /><button type='submit'>Submit</button></div></form>");
-          out.println("<div style='margin-top: 1em;'>You are logged in as "+principal.getName()+"</div></div>");
-          out.println("</body></html>");
-          pResponse.setStatus(HttpServletResponse.SC_FORBIDDEN);
-          return;
+          try(PrintWriter out = pResponse.getWriter();) {
+            out.println("<!DOCTYPE html>\n<html><head><title>Provide access token</title></head><body>");
+            out.print("<div style='margin:5em; border: 1px solid black; padding: 2em;'><div style='margin-bottom:2em;'>");
+            out.print(extramsg);
+            out.print("</div><form method='POST' action='"+req.getRequestURI()+"'><div>");
+            out.println("Please provide your access token</div><div><input type='text' name='key' /><button type='submit'>Submit</button></div></form>");
+            out.println("<div style='margin-top: 1em;'>You are logged in as "+principal.getName()+"</div></div>");
+            out.println("</body></html>");
+            pResponse.setStatus(HttpServletResponse.SC_FORBIDDEN);
+            return;
+          }
         }
       } else {
         //resp.sendRedirect(userService.createLoginURL(req.getRequestURI()));
         pResponse.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
         pResponse.setContentType("text/html");
-        PrintWriter out = pResponse.getWriter();
-        out.println("<!DOCTYPE html>\n<html><head><title>Please login</title></head><body>");
-        out.print("<div style='margin:5em; border: 1px solid black; padding: 2em;'><div style='margin-bottom:2em;'>");
-        out.print("Please <a href=\"");
-        if (req.getRequestURI().endsWith("logout")) {
-          out.print(getLoginURL("/"));
-        } else {
-          out.print(getLoginURL(req.getRequestURI()));
-        }
-        out.print("\">login</a></div>");
-        out.println("</body></html>");
+        try(PrintWriter out = pResponse.getWriter();) {
+          out.println("<!DOCTYPE html>\n<html><head><title>Please login</title></head><body>");
+          out.print("<div style='margin:5em; border: 1px solid black; padding: 2em;'><div style='margin-bottom:2em;'>");
+          out.print("Please <a href=\"");
+          if (req.getRequestURI().endsWith("logout")) {
+            out.print(getLoginURL("/"));
+          } else {
+            out.print(getLoginURL(req.getRequestURI()));
+          }
+          out.print("\">login</a></div>");
+          out.println("</body></html>");
 
-  //      resp.setStatus(HttpServletResponse.SC_FORBIDDEN);
-        return;
+    //      resp.setStatus(HttpServletResponse.SC_FORBIDDEN);
+          return;
+        }
       }
     } catch (SQLException e) {
       DarwinHtml.writeError(pResponse, 500, "Database error", e);
@@ -140,12 +143,12 @@ public class AuthFilter implements Filter {
     return "/accounts/login?redirect="+URLEncoder.encode(pRequestURI);
   }
 
-  private static void addAllowedUser(Principal principal, ServletRequest pKey) throws SQLException {
-    UserManager.addAllowedUser(principal, pKey);
+  private static void addAllowedUser(Principal principal) throws SQLException {
+    UserManager.addAllowedUser(principal);
   }
 
-  private static boolean isAllowed(Principal principal, ServletRequest pKey) throws SQLException {
-    return UserManager.isAllowedUser(principal, pKey);
+  private static boolean isAllowed(Principal principal) throws SQLException {
+    return UserManager.isAllowedUser(principal);
   }
 
   @Override
