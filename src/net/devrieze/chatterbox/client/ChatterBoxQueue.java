@@ -1,6 +1,5 @@
 package net.devrieze.chatterbox.client;
 
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -14,10 +13,18 @@ import net.devrieze.chatterbox.shared.MessagePojo;
 
 import com.google.gwt.core.client.GWT;
 import com.google.gwt.event.shared.EventBus;
-import com.google.gwt.http.client.*;
+import com.google.gwt.http.client.Request;
+import com.google.gwt.http.client.RequestBuilder;
+import com.google.gwt.http.client.RequestCallback;
+import com.google.gwt.http.client.RequestException;
+import com.google.gwt.http.client.Response;
 import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.Window.ClosingEvent;
-import com.google.gwt.xml.client.*;
+import com.google.gwt.xml.client.Document;
+import com.google.gwt.xml.client.Element;
+import com.google.gwt.xml.client.Node;
+import com.google.gwt.xml.client.NodeList;
+import com.google.gwt.xml.client.XMLParser;
 import com.google.gwt.xml.client.impl.DOMParseException;
 
 
@@ -54,8 +61,8 @@ public class ChatterBoxQueue implements Window.ClosingHandler{
 
     @Override
     public void onError(Throwable pException, boolean pConnected) {
-//      setUseChannel(false);
-//      eventBus.fireEventFromSource(new StatusEvent(StatusLevel.WARNING, "channel error: "+pException.getMessage()+"\n"),ChatterBoxQueue.this);
+      setUseChannel(false);
+      eventBus.fireEventFromSource(new StatusEvent(StatusLevel.WARNING, "channel error: "+pException.getMessage()),ChatterBoxQueue.this);
     }
 
     @Override
@@ -75,8 +82,8 @@ public class ChatterBoxQueue implements Window.ClosingHandler{
 
     @Override
     public void onMessage(List<?> pMessages) {
-      handleMessagesReceived(pMessages);
       eventBus.fireEventFromSource(new StatusEvent(StatusLevel.DEBUG, "Received channel messages (#"+pMessages.size()+")"),ChatterBoxQueue.this);
+      handleMessagesReceived(pMessages);
     }
   }
 
@@ -279,7 +286,14 @@ public class ChatterBoxQueue implements Window.ClosingHandler{
 
         @Override
         public void onResponseReceived(Request request, Response response) {
-          handleMessagesReceived(request, response);
+          final int statusCode = response.getStatusCode();
+          if (statusCode>=200 && statusCode<400) {
+            handleMessagesReceived(request, response);
+          } else if (statusCode==Response.SC_UNAUTHORIZED) {
+            eventBus.fireEventFromSource(new ReLoginEvent(), response);
+          } else {
+            eventBus.fireEventFromSource(new StatusEvent(StatusLevel.WARNING, "Unexpected response from server: "+statusCode+" "+response.getStatusText()), response);
+          }
         }
 
         @Override

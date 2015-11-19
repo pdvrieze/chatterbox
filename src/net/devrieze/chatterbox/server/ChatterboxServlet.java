@@ -1,7 +1,5 @@
 package net.devrieze.chatterbox.server;
 
-import static org.atmosphere.cpr.AtmosphereResource.TRANSPORT.LONG_POLLING;
-
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
@@ -12,18 +10,19 @@ import java.util.logging.Logger;
 
 import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
-import javax.servlet.ServletRequest;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-
-import net.devrieze.util.db.DBHelper;
-import net.devrieze.util.db.DBIterable;
 
 import org.atmosphere.cpr.Broadcaster;
 import org.atmosphere.cpr.Meteor;
 
 import uk.ac.bournemouth.darwin.catalina.realm.DarwinUserPrincipal;
+import static org.atmosphere.cpr.AtmosphereResource.TRANSPORT.*;
+
+import net.devrieze.annotations.NotNull;
+import net.devrieze.util.db.DBConnection;
+import net.devrieze.util.db.DBIterable;
 
 
 public class ChatterboxServlet extends HttpServlet {
@@ -74,7 +73,7 @@ public class ChatterboxServlet extends HttpServlet {
 
     MESSAGES("/messages"){
       @Override
-      public boolean handle(ChatterboxServlet servlet, Method method, HttpServletRequest req, HttpServletResponse resp) throws IOException {
+      public boolean handle(ChatterboxServlet servlet, Method method, HttpServletRequest req, HttpServletResponse resp) throws IOException, SQLException {
         switch (method) {
           case GET:
             return servlet.handleMessages(req, resp);
@@ -90,7 +89,7 @@ public class ChatterboxServlet extends HttpServlet {
 
     TOKENS("/tokens") {
       @Override
-      public boolean handle(ChatterboxServlet servlet, Method method, HttpServletRequest req, HttpServletResponse resp) throws IOException {
+      public boolean handle(ChatterboxServlet servlet, Method method, HttpServletRequest req, HttpServletResponse resp) throws IOException, SQLException {
         switch (method) {
           case GET:
             return servlet.handleGetAuthTokens(req,resp);
@@ -161,7 +160,7 @@ public class ChatterboxServlet extends HttpServlet {
       this.prefix = prefix;
     }
 
-    public abstract boolean handle(ChatterboxServlet servlet, Method method, HttpServletRequest req, HttpServletResponse resp) throws IOException;
+    public abstract boolean handle(ChatterboxServlet servlet, Method method, HttpServletRequest req, HttpServletResponse resp) throws IOException, SQLException;
 
     public boolean isTargetted(String myPath) {
       return prefix.equals(myPath);
@@ -183,8 +182,8 @@ public class ChatterboxServlet extends HttpServlet {
         getLogger().info("Could not handle request");
         super.doGet(req, resp);
       }
-    } finally {
-      DBHelper.closeConnections(req);
+    } catch (SQLException e) {
+      throw new ServletException(e);
     }
   }
 
@@ -204,8 +203,8 @@ public class ChatterboxServlet extends HttpServlet {
       if (! (t.handle(this, Method.POST, req, resp))) {
         super.doPost(req, resp);
       }
-    } finally {
-      DBHelper.closeConnections(req);
+    } catch (SQLException e) {
+      throw new ServletException(e);
     }
   }
 
@@ -221,8 +220,8 @@ public class ChatterboxServlet extends HttpServlet {
       if (! (t.handle(this, Method.DELETE, req, resp))) {
         super.doDelete(req, resp);
       }
-    } finally {
-      DBHelper.closeConnections(req);
+    } catch (SQLException e) {
+      throw new ServletException(e);
     }
   }
 
@@ -234,22 +233,24 @@ public class ChatterboxServlet extends HttpServlet {
       return;
     }
     getLogger().info("Handling PUT request for "+t.prefix);
-    if ((t.handle(this, Method.PUT, req, resp))) {
-      DBHelper.closeConnections(req);
-    } else {
-      super.doPut(req, resp);
+    try {
+      if (!(t.handle(this, Method.PUT, req, resp))) {
+        super.doPut(req, resp);
+      }
+    } catch (SQLException e) {
+      throw new ServletException(e);
     }
   }
 
-  private Box getDefaultBox(ServletRequest pKey) {
-    Box result = ChatboxManager.getBox(DEFAULT_BOX, pKey);
+  private Box getDefaultBox(@NotNull DBConnection db) throws SQLException {
+    Box result = ChatboxManager.getBox(db, DEFAULT_BOX);
     if (result==null) {
-      result = ChatboxManager.createBox(DEFAULT_BOX, DEFAULT_OWNER, pKey);
+      result = ChatboxManager.createBox(db, DEFAULT_BOX, DEFAULT_OWNER);
     }
     return result;
   }
 
-  private boolean handleMessage(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+  private boolean handleMessage(HttpServletRequest req, HttpServletResponse resp) throws IOException, SQLException {
     int contentLength = req.getContentLength();
     if (contentLength > 10240) {
       resp.setContentType("text/html");
@@ -262,7 +263,7 @@ public class ChatterboxServlet extends HttpServlet {
 
     StringBuilder message = new StringBuilder(contentLength);
     try(BufferedReader in = req.getReader()) {
-  
+
       // Assume most text will be ascii and as such contentlength == string length
       char[] buffer = new char[contentLength];
       {
@@ -273,8 +274,8 @@ public class ChatterboxServlet extends HttpServlet {
         }
       }
     }
-    
-    Message m = channelManager.createNewMessageAndNotify(Util.sanitizeHtml(message.toString()), req.getUserPrincipal(), req);
+
+    Message m = channelManager.createNewMessageAndNotify(Util.sanitizeHtml(message.toString()), req.getUserPrincipal());
     resp.getWriter().append("<?xml version=\"1.0\"?>\n").append(m.toXML());
     resp.setStatus(HttpServletResponse.SC_OK);
     return true;
@@ -289,7 +290,8 @@ public class ChatterboxServlet extends HttpServlet {
     try(PrintWriter out = resp.getWriter()) {
       out.append("<?xml version=\"1.0\"?>\n");
       out.append("<authTokens>\n");
-      try (DBIterable<String> authTokens = ChatboxManager.getAuthTokens(pReq)) {
+      try (DBConnection connection = ChatboxManager.getConnection();
+          DBIterable<String> authTokens = ChatboxManager.getAuthTokens(connection)) {
         for (String s : authTokens.all()) {
           out.append("  <authToken>").append(s).append("</authToken>\n");
         }
@@ -305,32 +307,40 @@ public class ChatterboxServlet extends HttpServlet {
     return true;
   }
 
-  protected boolean handleDelAuthTokens(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+  protected boolean handleDelAuthTokens(HttpServletRequest req, HttpServletResponse resp) throws IOException, SQLException {
     if (! ChatboxManager.isSystemAdmin(req.getUserPrincipal())) {
       resp.setStatus(HttpServletResponse.SC_FORBIDDEN);
       return true;
     }
     String token = req.getPathInfo();
     boolean notFound;
-    if (! token.startsWith(Target.TOKENS.prefix)) {
-      notFound=true;
-    } else {
-      token = token.substring(Target.TOKENS.prefix.length());
-      if (! (token.length()>=2 && token.charAt(0)=='/')) {
-        notFound= true;
+    @SuppressWarnings("resource")
+    DBConnection db=null;
+    try {
+      if (! token.startsWith(Target.TOKENS.prefix)) {
+        notFound=true;
       } else {
-        token = token.substring(1);
-        notFound = ! ChatboxManager.isValidToken(token, req);
+        token = token.substring(Target.TOKENS.prefix.length());
+        if (! (token.length()>=2 && token.charAt(0)=='/')) {
+          notFound= true;
+        } else {
+          token = token.substring(1);
+          db = ChatboxManager.getConnection();
+          notFound = ! ChatboxManager.isValidToken(db, token);
+        }
       }
-    }
 
-    if (notFound) {
-      resp.setStatus(HttpServletResponse.SC_NOT_FOUND);
-      return true;
-    } else {
-      ChatboxManager.removeAuthToken(token, req);
-      handleGetAuthTokens(req, resp);
-      return true;
+      if (notFound) {
+        resp.setStatus(HttpServletResponse.SC_NOT_FOUND);
+        return true;
+      } else {
+        if (db==null) { db = ChatboxManager.getConnection(); }
+        ChatboxManager.removeAuthToken(db, token);
+        handleGetAuthTokens(req, resp);
+        return true;
+      }
+    } finally {
+      if (db!=null) { db.close(); }
     }
   }
 
@@ -367,54 +377,55 @@ public class ChatterboxServlet extends HttpServlet {
     }
   }
 
-  private boolean handleMessages(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+  private boolean handleMessages(HttpServletRequest req, HttpServletResponse resp) throws IOException, SQLException {
     resp.setContentType("text/xml; charset=utf-8");
-    PrintWriter out = resp.getWriter();
-    out.println("<?xml version=\"1.0\"?>");
+    try (PrintWriter out = resp.getWriter()) {
+      out.println("<?xml version=\"1.0\"?>");
 
-    try {
-      out.print("<messages name=\"");
-      Box b;
-      try {
-        b = getDefaultBox(req);
-        out.print(Util.encodeHtml(b.getName()));
+      try (DBConnection connection = ChatboxManager.getConnection()){
+        out.print("<messages name=\"");
+        Box b;
+        try {
+          b = getDefaultBox(connection);
+          out.print(Util.encodeHtml(b.getName()));
+        } finally {
+          out.println("\">");
+        }
+
+        long start = b.getFirstMessageIndex(connection);
+        long end = b.getLastMessageIndex(connection);
+        {
+          String startAttr = req.getParameter("start");
+          if("last".equalsIgnoreCase(startAttr)) {
+            start=end;
+          } else {
+            try {
+              if (startAttr!=null) { start = Math.max(start, Long.parseLong(startAttr)); }
+            } catch (NumberFormatException e) { /* Just ignore */ }
+          }
+        }
+        {
+          String endAttr = req.getParameter("end");
+          if ("first".equalsIgnoreCase(endAttr)) {
+            end=start;
+          } else {
+            try {
+              if (endAttr!=null) { end = Math.min(end, Long.parseLong(endAttr)); }
+            } catch (NumberFormatException e) { /* Just ignore */ }
+          }
+        }
+
+        try (DBIterable<Message> messages = b.getMessages(connection, start, end)){
+          for (Message m : messages.all()) {
+            out.println(m.toXML());
+          }
+        } catch (SQLException e) {
+          throw new RuntimeException(e);
+        }
+
       } finally {
-        out.println("\">");
+        out.println("</messages>");
       }
-
-      long start = b.getFirstMessageIndex();
-      long end = b.getLastMessageIndex();
-      {
-        String startAttr = req.getParameter("start");
-        if("last".equalsIgnoreCase(startAttr)) {
-          start=end;
-        } else {
-          try {
-            if (startAttr!=null) { start = Math.max(start, Long.parseLong(startAttr)); }
-          } catch (NumberFormatException e) { /* Just ignore */ }
-        }
-      }
-      {
-        String endAttr = req.getParameter("end");
-        if ("first".equalsIgnoreCase(endAttr)) {
-          end=b.getFirstMessageIndex();
-        } else {
-          try {
-            if (endAttr!=null) { end = Math.min(end, Long.parseLong(endAttr)); }
-          } catch (NumberFormatException e) { /* Just ignore */ }
-        }
-      }
-
-      try (DBIterable<Message> messages = b.getMessages(start, end)){
-        for (Message m : messages.all()) {
-          out.println(m.toXML());
-        }
-      } catch (SQLException e) {
-        throw new RuntimeException(e);
-      }
-
-    } finally {
-      out.println("</messages>");
     }
     resp.setStatus(HttpServletResponse.SC_OK);
 
@@ -426,7 +437,8 @@ public class ChatterboxServlet extends HttpServlet {
     try(PrintWriter out = pResp.getWriter()) {
       out.println("<?xml version=\"1.0\"?>");
       out.println("<boxes>");
-      try(DBIterable<Box> boxes = ChatboxManager.getBoxes(pReq)) {
+      try (DBConnection connection = ChatboxManager.getConnection();
+           DBIterable<Box> boxes = ChatboxManager.getBoxes(connection)) {
         for (Box b : boxes.all()) {
           out.print("  <box");
           final CharSequence name = b.getName();
@@ -447,25 +459,28 @@ public class ChatterboxServlet extends HttpServlet {
     }
   }
 
-  private boolean handleClear(HttpServletRequest pReq, HttpServletResponse pResp) throws IOException {
-    return handleClear(pReq, pResp, getDefaultBox(pReq));
+  private boolean handleClear(HttpServletRequest pReq, HttpServletResponse pResp) throws IOException, SQLException {
+    try (DBConnection connection = ChatboxManager.getConnection()){
+      return handleClear(connection, pReq, pResp, getDefaultBox(connection));
+    }
   }
 
-  private boolean handleClear(HttpServletRequest pReq, HttpServletResponse resp, Box pBox) throws IOException {
+  private boolean handleClear(@NotNull DBConnection connection, HttpServletRequest pReq, HttpServletResponse resp, Box pBox) throws IOException, SQLException {
     if (! ChatboxManager.isAdmin(pBox, pReq.getUserPrincipal())) {
       resp.setStatus(HttpServletResponse.SC_FORBIDDEN);
       return true;
     }
 
-    pBox.clear();
+    pBox.clear(connection);
 
     resp.setContentType("text/xml; charset=utf-8");
-    PrintWriter out = resp.getWriter();
-    out.println("<?xml version=\"1.0\"?>");
-    out.println("<messages>");
-    out.println("</messages>");
-    resp.setStatus(HttpServletResponse.SC_OK);
-    return true;
+    try (PrintWriter out = resp.getWriter();) {
+      out.println("<?xml version=\"1.0\"?>");
+      out.println("<messages>");
+      out.println("</messages>");
+      resp.setStatus(HttpServletResponse.SC_OK);
+      return true;
+    }
   }
 
 
@@ -485,18 +500,19 @@ public class ChatterboxServlet extends HttpServlet {
 
   private boolean handleUserInfo(HttpServletRequest req, HttpServletResponse resp) throws IOException {
     resp.setContentType("text/xml");
-    PrintWriter out = resp.getWriter();
-    Principal p = req.getUserPrincipal();
-    out.println("<?xml version=\"1.0\"?>");
-    out.append("<user id=\"").append(Util.encodeHtml(p.getName())).append("\">\n  <email>");
-    if (p instanceof DarwinUserPrincipal) {
-      out.append(Util.encodeHtml(((DarwinUserPrincipal)p).getEmail())).append("</email>\n");
-    } else {
-      out.append(Util.encodeHtml(p.getName())).append("@localhost</email>\n");
-    }
-    out.append("</user>");
+    try(PrintWriter out = resp.getWriter();) {
+      Principal p = req.getUserPrincipal();
+      out.println("<?xml version=\"1.0\"?>");
+      out.append("<user id=\"").append(Util.encodeHtml(p.getName())).append("\">\n  <email>");
+      if (p instanceof DarwinUserPrincipal) {
+        out.append(Util.encodeHtml(((DarwinUserPrincipal)p).getEmail())).append("</email>\n");
+      } else {
+        out.append(Util.encodeHtml(p.getName())).append("@localhost</email>\n");
+      }
+      out.append("</user>");
 
-    return true;
+      return true;
+    }
   }
 
   private Target getTarget(HttpServletRequest req) {
