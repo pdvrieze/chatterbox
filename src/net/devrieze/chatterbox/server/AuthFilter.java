@@ -1,26 +1,22 @@
 package net.devrieze.chatterbox.server;
 
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.net.URLEncoder;
-import java.security.Principal;
-import java.sql.SQLException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import net.devrieze.chatterbox.server.html.DarwinHtml;
+import org.jetbrains.annotations.NotNull;
 
-import javax.servlet.Filter;
-import javax.servlet.FilterChain;
-import javax.servlet.FilterConfig;
-import javax.servlet.ServletException;
-import javax.servlet.ServletRequest;
-import javax.servlet.ServletResponse;
+import javax.naming.NamingException;
+import javax.servlet.*;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import uk.ac.bournemouth.darwin.html.util.DarwinHtml;
-
-import net.devrieze.annotations.NotNull;
-import net.devrieze.util.db.DBConnection;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
+import java.security.Principal;
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 
 public class AuthFilter implements Filter {
@@ -72,7 +68,7 @@ public class AuthFilter implements Filter {
           if ("POST".equals(req.getMethod())){
             String token = req.getParameter("key");
             if (token != null && token.length() > 0) {
-              try (DBConnection connection = ChatboxManager.getConnection()){
+              try (Connection connection = Util.getConnection(ChatboxManager.CHATBOX_DB_RESOURCE)){
                 if (ChatboxManager.isValidToken(connection, token)) {
                   addAllowedUser(principal);
                   pResponse.sendRedirect(pResponse.encodeRedirectURL(req.getRequestURI()));
@@ -81,7 +77,7 @@ public class AuthFilter implements Filter {
                   extramsg = "The token is not right, you will not be authorized to use this app.";
                 }
 
-              } catch (SQLException e) {
+              } catch (SQLException | NamingException e) {
                 throw new ServletException(e);
               }
             } else {
@@ -121,7 +117,7 @@ public class AuthFilter implements Filter {
           return;
         }
       }
-    } catch (SQLException e) {
+    } catch (NamingException | SQLException e) {
       DarwinHtml.writeError(pResponse, 500, "Database error", e);
     }
   }
@@ -140,14 +136,18 @@ public class AuthFilter implements Filter {
    * @param pRequestURI The url to forward to.
    */
   private String getLoginURL(String pRequestURI) {
-    return "/accounts/login?redirect="+URLEncoder.encode(pRequestURI);
+    try {
+      return "/accounts/login?redirect="+URLEncoder.encode(pRequestURI, "UTF-8");
+    } catch (UnsupportedEncodingException e) {
+      throw new RuntimeException(e);
+    }
   }
 
-  private static void addAllowedUser(Principal principal) throws SQLException {
+  private static void addAllowedUser(Principal principal) throws SQLException, NamingException {
     UserManager.addAllowedUser(principal);
   }
 
-  private static boolean isAllowed(Principal principal) throws SQLException {
+  private static boolean isAllowed(Principal principal) throws SQLException, NamingException {
     return UserManager.isAllowedUser(principal);
   }
 

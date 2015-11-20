@@ -1,0 +1,25 @@
+<component name="ArtifactManager">
+  <artifact type="exploded-war" name="Gradle : chatterbox : chatterbox-draft-1.0.0.war (exploded)">
+    <output-path>build/artifacts/chatterbox/exploded/chatterbox-draft-1.0.0.war</output-path>
+    <properties id="gradle-properties">
+      <options external-project-path="$PROJECT_DIR$" />
+    </properties>
+    <root id="root">
+      <element id="javaee-facet-resources" facet="chatterbox/web/Web Gradle : chatterbox-draft-1.0.0.war" />
+      <element id="directory" name="WEB-INF">
+        <element id="directory" name="classes">
+          <element id="module-output" name="chatterbox" />
+          <element id="dir-copy" path="$PROJECT_DIR$/build/resources/main" />
+        </element>
+        <element id="directory" name="lib">
+          <element id="library" level="project" name="Gradle: com.google.gwt:gwt-servlet:2.7.0" />
+          <element id="file-copy" path="$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.atmosphere/atmosphere-gwt-server/1.0.19/a88e4bdce30761e8c9013a6f7309b1e54abd6857/atmosphere-gwt-server-1.0.19.jar" />
+          <element id="file-copy" path="$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.atmosphere/atmosphere-runtime/1.0.19/93c6f1e2616e7fff15607bfa5320966bcfa05fa3/atmosphere-runtime-1.0.19.jar" />
+          <element id="file-copy" path="$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.atmosphere/atmosphere-compat-jbossweb/1.0.19/950848731c76b51afbb92e88b42ceabe0300a77c/atmosphere-compat-jbossweb-1.0.19.jar" />
+          <element id="file-copy" path="$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.atmosphere/atmosphere-compat-tomcat/1.0.19/2ddcdf60ac3bbfbae35d69cc5f439006c9b4ccfd/atmosphere-compat-tomcat-1.0.19.jar" />
+          <element id="file-copy" path="$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.atmosphere/atmosphere-compat-tomcat7/1.0.19/6d418049b5260d5551135dd93fcd3fcb23fe5e45/atmosphere-compat-tomcat7-1.0.19.jar" />
+        </element>
+      </element>
+    </root>
+  </artifact>
+</component>

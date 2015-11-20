@@ -1,11 +1,11 @@
 package net.devrieze.chatterbox.server;
 
-import java.security.Principal;
-import java.sql.SQLException;
+import org.jetbrains.annotations.NotNull;
 
-import net.devrieze.annotations.NotNull;
-import net.devrieze.util.db.DBConnection;
-import net.devrieze.util.db.DBIterable;
+import java.security.Principal;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 
 
 /**
@@ -28,25 +28,25 @@ public class Box {
     aOwner = pOwner;
   }
 
-  public long getFirstMessageIndex(@NotNull DBConnection connection) {
+  public long getFirstMessageIndex(@NotNull Connection connection) throws SQLException {
     if (aFirstIndex<0) { aFirstIndex = ChatboxManager.getFirstIndex(connection, aBoxId); }
     return aFirstIndex ;
   }
 
-  public long getLastMessageIndex(@NotNull DBConnection connection) {
+  public long getLastMessageIndex(@NotNull Connection connection) throws SQLException {
     if (aLastIndex<0) { aLastIndex = ChatboxManager.getLastIndex(connection, aBoxId); }
     return aLastIndex ;
   }
 
-  public DBIterable<Message> getMessages(@NotNull DBConnection pConnection) {
-    return ChatboxManager.getMessages(pConnection, aBoxId);
+  public PreparedStatement getMessages(@NotNull Connection pConnection) throws SQLException {
+    return ChatboxManager.getMessagesStatement(pConnection, aBoxId);
   }
 
-  public DBIterable<Message> getMessages(@NotNull DBConnection pConnection, long start, long end) {
-    return ChatboxManager.getMessages(pConnection, aBoxId, start, end);
+  public PreparedStatement getMessages(@NotNull Connection pConnection, long start, long end) throws SQLException {
+    return ChatboxManager.getMessagesStatement(pConnection, aBoxId, start, end);
   }
 
-  public Message addMessage(@NotNull DBConnection connection, String pMessageBody, Principal pSender) throws SQLException {
+  public Message addMessage(@NotNull Connection connection, String pMessageBody, Principal pSender) throws SQLException {
     aLastIndex=-1;
     // TODO use transactions
     Message msg = new Message(getNextMsgIndex(connection),pMessageBody, UserManager.getCurrentUserEmail(pSender));
@@ -55,11 +55,11 @@ public class Box {
     return msg;
   }
 
-  private long getNextMsgIndex(@NotNull DBConnection pConnection) {
+  private long getNextMsgIndex(@NotNull Connection pConnection) throws SQLException {
     return getLastMessageIndex(pConnection)+1;
   }
 
-  public void clear(@NotNull DBConnection connection) throws SQLException {
+  public void clear(@NotNull Connection connection) throws SQLException {
     ChatboxManager.clearMessages(connection, aBoxId);
     connection.commit();
   }

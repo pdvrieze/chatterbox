@@ -1,5 +1,11 @@
 package net.devrieze.chatterbox.server;
 
+import javax.naming.InitialContext;
+import javax.naming.NamingException;
+import javax.sql.DataSource;
+
+import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -285,6 +291,12 @@ public final class Util {
     }
     result.append("&amp;");
     return startPos - 1;
+  }
+
+  public static Connection getConnection(String name) throws SQLException, NamingException {
+    InitialContext initialContext = new InitialContext();
+    DataSource dbHelper = (DataSource) initialContext.lookup(name);
+    return dbHelper.getConnection();
   }
 
 }
