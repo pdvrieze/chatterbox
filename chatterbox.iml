@@ -5,7 +5,7 @@
       <configuration>
         <setting name="compilerMaxHeapSize" value="1024" />
         <setting name="gwtScriptOutputStyle" value="DETAILED" />
-        <setting name="gwtSdkUrl" value="file://$USER_HOME$/.gradle/caches/modules-2/files-2.1/com.google.gwt/gwt-dev/2.7.0" />
+        <setting name="gwtSdkUrl" value="file://$USER_HOME$/.gradle/caches/modules-2/files-2.1/com.google.gwt/gwt-dev/2.4.0" />
         <setting name="gwtSdkType" value="gradle" />
         <setting name="webFacet" value="Web" />
       </configuration>
@@ -41,6 +41,8 @@
       <configuration>
         <webroots>
           <root url="file://$MODULE_DIR$/src/main/webapp" relative="/" />
+          <root url="file://$MODULE_DIR$/build/gwt/out/chatterbox" relative="/chatterbox" />
+          <root url="file://$MODULE_DIR$/build/gwt/out/WEB-INF" relative="/WEB-INF" />
         </webroots>
         <sourceRoots>
           <root url="file://$MODULE_DIR$/src/main/java" />
@@ -66,9 +68,7 @@
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="library" scope="PROVIDED" name="Gradle: com.intellij:annotations:12.0" level="project" />
-    <orderEntry type="library" scope="RUNTIME" name="Gradle: com.google.gwt:gwt-servlet:2.7.0" level="project" />
     <orderEntry type="library" scope="PROVIDED" name="Gradle: org.atmosphere:atmosphere-gwt-client:1.0.19" level="project" />
-    <orderEntry type="library" scope="PROVIDED" name="Gradle: com.google.gwt:gwt-user:2.7.0" level="project" />
     <orderEntry type="library" scope="PROVIDED" name="Gradle: org.atmosphere:atmosphere-gwt-common:1.0.19" level="project" />
     <orderEntry type="library" scope="PROVIDED" name="Gradle: org.slf4j:slf4j-api:1.6.1" level="project" />
     <orderEntry type="library" scope="PROVIDED" name="Gradle: javax.validation:validation-api:1.0.0.GA" level="project" />
@@ -79,5 +79,6 @@
     <orderEntry type="library" name="Gradle: org.atmosphere:atmosphere-compat-tomcat:1.0.19" level="project" />
     <orderEntry type="library" name="Gradle: org.atmosphere:atmosphere-compat-tomcat7:1.0.19" level="project" />
     <orderEntry type="library" name="Gradle: com.google.gwt:gwt-servlet:2.4.0" level="project" />
+    <orderEntry type="library" scope="PROVIDED" name="Gradle: com.google.gwt:gwt-user:2.4.0" level="project" />
   </component>
 </module>
