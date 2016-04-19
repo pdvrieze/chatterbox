@@ -86,6 +86,7 @@ public class AuthFilter implements Filter {
           }
           pResponse.setContentType("text/html; charset=utf8");
           try(PrintWriter out = pResponse.getWriter();) {
+            pResponse.setStatus(HttpServletResponse.SC_FORBIDDEN);
             out.println("<!DOCTYPE html>\n<html><head><title>Provide access token</title></head><body>");
             out.print("<div style='margin:5em; border: 1px solid black; padding: 2em;'><div style='margin-bottom:2em;'>");
             out.print(extramsg);
@@ -93,7 +94,6 @@ public class AuthFilter implements Filter {
             out.println("Please provide your access token</div><div><input type='text' name='key' /><button type='submit'>Submit</button></div></form>");
             out.println("<div style='margin-top: 1em;'>You are logged in as "+principal.getName()+"</div></div>");
             out.println("</body></html>");
-            pResponse.setStatus(HttpServletResponse.SC_FORBIDDEN);
             return;
           }
         }

@@ -2,7 +2,9 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/chatterbox.iml" filepath="$PROJECT_DIR$/chatterbox.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/chatterbox.iml" filepath="$PROJECT_DIR$/.idea/modules/chatterbox.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/chatterbox_main.iml" filepath="$PROJECT_DIR$/.idea/modules/chatterbox_main.iml" group="chatterbox" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/chatterbox_test.iml" filepath="$PROJECT_DIR$/.idea/modules/chatterbox_test.iml" group="chatterbox" />
     </modules>
   </component>
 </project>

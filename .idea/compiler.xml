@@ -18,5 +18,9 @@
         <processorPath useClasspath="true" />
       </profile>
     </annotationProcessing>
+    <bytecodeTargetLevel>
+      <module name="chatterbox_main" target="1.7" />
+      <module name="chatterbox_test" target="1.7" />
+    </bytecodeTargetLevel>
   </component>
 </project>

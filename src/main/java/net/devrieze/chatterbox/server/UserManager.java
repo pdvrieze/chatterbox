@@ -33,16 +33,17 @@ public class UserManager {
   private static volatile boolean _checkedDarwinPrincipal;
   private static Class<? extends Principal> _DarwinUserPrincipal;
   private static MethodHandle _getEmail;
+  private static MethodHandle _hasRole;
 
   @NotNull
   private static final String SQL_ADD_APP_PERM = "INSERT IGNORE INTO "+TABLE_PERMS+" SET "+COL_USER+" = ?, "+COL_APP+" = ?";
-  private static final int SQL_I_ADD_APP_PERM_COL_USER = 1;
 
+  private static final int SQL_I_ADD_APP_PERM_COL_USER = 1;
   private static final int SQL_I_ADD_APP_PERM_COL_APPNAME = 2;
   @NotNull
   private static final String SQL_CHECK_APP_PERM = "SELECT "+COL_USER+" FROM "+TABLE_PERMS+" WHERE "+COL_USER+"=? AND "+COL_APP+" = ?";
-  private static final int SQL_I_CHECK_APP_PERM_COL_USER = 1;
 
+  private static final int SQL_I_CHECK_APP_PERM_COL_USER = 1;
   private static final int SQL_I_CHECK_APP_PERM_COL_APPNAME = 2;
   static DataSource aDataSource;
 
@@ -58,6 +59,14 @@ public class UserManager {
   }
 
   public static boolean isAllowedUser(Principal pPrincipal) throws SQLException, NamingException {
+    loadDarwinPrincipalClass();
+    if (_hasRole!=null && _DarwinUserPrincipal.isInstance(pPrincipal)) {
+      try {
+        return ((Boolean)_hasRole.invokeExact(_DarwinUserPrincipal.cast(pPrincipal),"appprogramming")).booleanValue();
+      } catch (Throwable throwable) {
+        // Just use the regular way
+      }
+    }
     try (Connection connection = getConnection(RESOURCE_REF)){
       try (PreparedStatement query = connection.prepareStatement(SQL_CHECK_APP_PERM)) {
         query.setString(SQL_I_CHECK_APP_PERM_COL_USER, pPrincipal.getName());
@@ -74,22 +83,7 @@ public class UserManager {
   }
 
   public static String getCurrentUserEmail(Principal p) {
-    if (! _checkedDarwinPrincipal) {
-      synchronized (UserManager.class) {
-        _checkedDarwinPrincipal = true;
-        try {
-          //noinspection unchecked
-          _DarwinUserPrincipal = (Class<? extends Principal>) UserManager.class.getClassLoader().loadClass("uk.ac.bournemouth.darwin.catalina.realm.DarwinUserPrincipal");
-          Lookup lookup = MethodHandles.lookup();
-          _getEmail = lookup.findVirtual(_DarwinUserPrincipal, "getEmail", MethodType.methodType(CharSequence.class));
-        } catch (ClassNotFoundException | NoSuchMethodException | IllegalAccessException e) {
-          _DarwinUserPrincipal = null;
-          _getEmail = null;
-          // Just make sure these are null and we don't attempt to use them.
-        }
-      }
-
-    }
+    loadDarwinPrincipalClass();
     if (_getEmail!=null) {
       if (_DarwinUserPrincipal.isInstance(p)) {
         try {
@@ -101,6 +95,27 @@ public class UserManager {
     }
 
     return p.getName()+"@bournemouth.ac.uk";
+  }
+
+  private static void loadDarwinPrincipalClass() {
+    if (! _checkedDarwinPrincipal) {
+      synchronized (UserManager.class) {
+        _checkedDarwinPrincipal = true;
+        try {
+          //noinspection unchecked
+          _DarwinUserPrincipal = (Class<? extends Principal>) UserManager.class.getClassLoader().loadClass("uk.ac.bournemouth.darwin.catalina.realm.DarwinUserPrincipal");
+          Lookup lookup = MethodHandles.lookup();
+          _getEmail = lookup.findVirtual(_DarwinUserPrincipal, "getEmail", MethodType.methodType(CharSequence.class));
+          _hasRole = lookup.findVirtual(_DarwinUserPrincipal, "hasRole", MethodType.methodType(boolean.class, String.class));
+        } catch (ClassNotFoundException | NoSuchMethodException | IllegalAccessException e) {
+          _DarwinUserPrincipal = null;
+          _getEmail = null;
+          _hasRole = null;
+          // Just make sure these are null and we don't attempt to use them.
+        }
+      }
+
+    }
   }
 
   public static void destroy() {

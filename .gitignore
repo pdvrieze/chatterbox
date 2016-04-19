@@ -1,4 +1,9 @@
 /.idea/libraries
+/.idea/modules
+/.idea/artifacts/Gradle___chatterbox_draft_1_0_0_war__exploded_.xml
+/.idea/artifacts/Gradle___chatterbox_1_0_0_war__exploded_.xml
+/.idea/artifacts/Gradle___chatterbox_1_0_0_war.xml
+/.idea/artifacts/Gradle___chatterbox_draft_1_0_0_war.xml
 /.gradle/
 /.gwt
 /war/WEB-INF/appengine-generated

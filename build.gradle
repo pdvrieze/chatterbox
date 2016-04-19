@@ -1,7 +1,7 @@
 apply plugin: 'idea'
 
-apply plugin: 'war'
 apply plugin: 'gwt'
+apply plugin: 'war'
 
 repositories {
     jcenter()
@@ -27,21 +27,6 @@ description = 'A chatbox applications that students can test their android apps 
 sourceCompatibility = JavaVersion.VERSION_1_7
 targetCompatibility = JavaVersion.VERSION_1_7
 
-configurations {
-    apiCompile
-    apiProvided
-    main {
-        extendsFrom apiCompile
-    }
-}
-
-sourceSets {
-    main {
-        java {
-            srcDir 'src'
-        }
-    }
-}
 
 task tomcatRun(dependsOn: ["war"]) {
     group = 'web application'
