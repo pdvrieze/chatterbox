@@ -391,7 +391,7 @@ public class ChatterboxServlet extends HttpServlet {
     try (PrintWriter out = resp.getWriter()) {
       out.println("<?xml version=\"1.0\"?>");
 
-      try (Connection connection = Util.getConnection(ChatboxManager.CHATBOX_DB_RESOURCE)){
+      try (Connection connection = Util.getConnection(ChatboxManager.CHATBOX_DB_RESOURCE)) {
         out.print("<messages name=\"");
         Box b;
         try {
@@ -400,42 +400,43 @@ public class ChatterboxServlet extends HttpServlet {
         } finally {
           out.println("\">");
         }
-
-        long start = b.getFirstMessageIndex(connection);
-        long end = b.getLastMessageIndex(connection);
-        {
-          String startAttr = req.getParameter("start");
-          if("last".equalsIgnoreCase(startAttr)) {
-            start=end;
-          } else {
-            try {
-              if (startAttr!=null) { start = Math.max(start, Long.parseLong(startAttr)); }
-            } catch (NumberFormatException e) { /* Just ignore */ }
+        try {
+          long start = b.getFirstMessageIndex(connection);
+          long end = b.getLastMessageIndex(connection);
+          {
+            String startAttr = req.getParameter("start");
+            if ("last".equalsIgnoreCase(startAttr)) {
+              start = end;
+            } else {
+              try {
+                if (startAttr != null) { start = Math.max(start, Long.parseLong(startAttr)); }
+              } catch (NumberFormatException e) { /* Just ignore */ }
+            }
           }
-        }
-        {
-          String endAttr = req.getParameter("end");
-          if ("first".equalsIgnoreCase(endAttr)) {
-            end=start;
-          } else {
-            try {
-              if (endAttr!=null) { end = Math.min(end, Long.parseLong(endAttr)); }
-            } catch (NumberFormatException e) { /* Just ignore */ }
+          {
+            String endAttr = req.getParameter("end");
+            if ("first".equalsIgnoreCase(endAttr)) {
+              end = start;
+            } else {
+              try {
+                if (endAttr != null) { end = Math.min(end, Long.parseLong(endAttr)); }
+              } catch (NumberFormatException e) { /* Just ignore */ }
+            }
           }
-        }
 
-        try (PreparedStatement messagesStatement = b.getMessages(connection, start, end);
-             ResultSet messages = messagesStatement.executeQuery()) {
-          MessageAdapter adapter = new MessageAdapter(messages.getMetaData());
-          while (messages.next()) {
-            out.println(adapter.getMessage(messages).toXML());
+          try (PreparedStatement messagesStatement = b.getMessages(connection, start, end); ResultSet messages = messagesStatement
+              .executeQuery()) {
+            MessageAdapter adapter = new MessageAdapter(messages.getMetaData());
+            while (messages.next()) {
+              out.println(adapter.getMessage(messages).toXML());
+            }
+          } catch (SQLException e) {
+            throw new RuntimeException(e);
           }
-        } catch (SQLException e) {
-          throw new RuntimeException(e);
-        }
 
-      } finally {
-        out.println("</messages>");
+        } finally {
+          out.println("</messages>");
+        }
       }
     }
     resp.setStatus(HttpServletResponse.SC_OK);
@@ -509,7 +510,7 @@ public class ChatterboxServlet extends HttpServlet {
     Broadcaster b = channelManager.getBroadcaster();
     m.setBroadcaster(b);
     m.resumeOnBroadcast(m.transport() == LONG_POLLING);
-    m.suspend(-1,false);
+    m.suspend(-1);
     return true;
   }
 

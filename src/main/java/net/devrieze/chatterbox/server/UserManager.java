@@ -3,6 +3,7 @@ package net.devrieze.chatterbox.server;
 import org.jetbrains.annotations.NotNull;
 
 import javax.naming.NamingException;
+import javax.servlet.http.HttpServletRequest;
 import javax.sql.DataSource;
 
 import java.lang.invoke.MethodHandle;
@@ -58,18 +59,12 @@ public class UserManager {
     }
   }
 
-  public static boolean isAllowedUser(Principal pPrincipal) throws SQLException, NamingException {
-    loadDarwinPrincipalClass();
-    if (_hasRole!=null && _DarwinUserPrincipal.isInstance(pPrincipal)) {
-      try {
-        return ((Boolean)_hasRole.invokeExact(_DarwinUserPrincipal.cast(pPrincipal),"appprogramming")).booleanValue();
-      } catch (Throwable throwable) {
-        // Just use the regular way
-      }
-    }
+  public static boolean isAllowedRequest(HttpServletRequest request) throws SQLException, NamingException {
+    if (request.isUserInRole("appprogramming")) return true;
+
     try (Connection connection = getConnection(RESOURCE_REF)){
       try (PreparedStatement query = connection.prepareStatement(SQL_CHECK_APP_PERM)) {
-        query.setString(SQL_I_CHECK_APP_PERM_COL_USER, pPrincipal.getName());
+        query.setString(SQL_I_CHECK_APP_PERM_COL_USER, request.getUserPrincipal().getName());
         query.setString(SQL_I_CHECK_APP_PERM_COL_APPNAME, APPNAME);
         try (ResultSet results = query.executeQuery()) {
           return results.next();

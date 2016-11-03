@@ -3,10 +3,8 @@ package net.devrieze.chatterbox.client;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.atmosphere.gwt.client.AtmosphereClient;
-import org.atmosphere.gwt.client.AtmosphereGWTSerializer;
-import org.atmosphere.gwt.client.AtmosphereListener;
-import org.atmosphere.gwt.client.SerialTypes;
+import org.atmosphere.gwt20.client.*;
+import org.atmosphere.gwt20.client.AtmosphereRequestConfig.Transport;
 
 import net.devrieze.chatterbox.client.StatusEvent.StatusLevel;
 import net.devrieze.chatterbox.shared.MessagePojo;
@@ -30,58 +28,29 @@ import com.google.gwt.xml.client.impl.DOMParseException;
 
 public class ChatterBoxQueue implements Window.ClosingHandler{
 
-  @SerialTypes({MessagePojo.class})
-  public abstract static class MessageDeserializer extends AtmosphereGWTSerializer { /* Extension point does not need implementation */ }
+  @GwtRpcSerialTypes({MessagePojo.class})
+  public abstract static class MessageDeserializer extends GwtRpcClientSerializer { /* Extension point does not need implementation */ }
 
-  private final class ChannelSocketListener implements AtmosphereListener {
+  private final class ChannelSocketListener implements AtmosphereOpenHandler, AtmosphereMessageHandler {
 
     @Override
-    public void onConnected(int pHeartbeat, int pConnectionID) {
+    public void onOpen(final AtmosphereResponse response) {
       if (!isUseChannel()) {
-        if (aAtmosphereClient.isRunning()) {
-          aAtmosphereClient.stop();
-          eventBus.fireEventFromSource(new StatusEvent(StatusLevel.INFO, "channel opened when close requested, closing it again"),ChatterBoxQueue.this);
-        } else {
-          eventBus.fireEventFromSource(new StatusEvent(StatusLevel.INFO, "channel opened when close requested, socket lost"),ChatterBoxQueue.this);
-        }
+        eventBus.fireEventFromSource(new StatusEvent(StatusLevel.INFO, "channel opened when close requested, socket lost"),ChatterBoxQueue.this);
       } else {
         eventBus.fireEventFromSource(new StatusEvent(StatusLevel.DEBUG, "channel opened"),ChatterBoxQueue.this);
       }
     }
 
-    @Override
-    public void onBeforeDisconnected() {
-      eventBus.fireEventFromSource(new StatusEvent(StatusLevel.DEBUG, "channel disconnecting"),ChatterBoxQueue.this);
-    }
 
     @Override
-    public void onDisconnected() {
-      eventBus.fireEventFromSource(new StatusEvent(StatusLevel.DEBUG, "channel closed"),ChatterBoxQueue.this);
+    public void onMessage(final AtmosphereResponse response) {
+      final List<?> messages = response.getMessages();
+      eventBus.fireEventFromSource(new StatusEvent(StatusLevel.DEBUG, "Received channel messages (#"+messages.size()+")"),ChatterBoxQueue.this);
+      handleMessagesReceived(messages);
     }
 
-    @Override
-    public void onError(Throwable pException, boolean pConnected) {
-      setUseChannel(false);
-      eventBus.fireEventFromSource(new StatusEvent(StatusLevel.WARNING, "channel error: "+pException.getMessage()),ChatterBoxQueue.this);
-    }
-
-    @Override
-    public void onHeartbeat() {
-      eventBus.fireEventFromSource(new StatusEvent(StatusLevel.DEBUG, "channel heartbeat"),ChatterBoxQueue.this);
-    }
-
-    @Override
-    public void onRefresh() {
-      eventBus.fireEventFromSource(new StatusEvent(StatusLevel.DEBUG, "channel refresh"),ChatterBoxQueue.this);
-    }
-
-    @Override
-    public void onAfterRefresh() {
-      // ignore
-    }
-
-    @Override
-    public void onMessage(List<?> pMessages) {
+    private void onMessage(List<?> pMessages) {
       eventBus.fireEventFromSource(new StatusEvent(StatusLevel.DEBUG, "Received channel messages (#"+pMessages.size()+")"),ChatterBoxQueue.this);
       handleMessagesReceived(pMessages);
     }
@@ -101,7 +70,7 @@ public class ChatterBoxQueue implements Window.ClosingHandler{
   private EventBus eventBus;
   private boolean useChannel;
 
-  private AtmosphereClient aAtmosphereClient=null;
+  private Atmosphere aAtmosphereClient=null;
 
   public ChatterBoxQueue (EventBus eventBus, boolean useChannel) {
     this.eventBus = eventBus;
@@ -345,7 +314,7 @@ public class ChatterBoxQueue implements Window.ClosingHandler{
 
   private void disconnectFromChannel() {
     if (aAtmosphereClient!=null) {
-      aAtmosphereClient.stop();
+      aAtmosphereClient.unsubscribe();
 //      aAtmosphereClient=null;
     }
 
@@ -355,10 +324,16 @@ public class ChatterBoxQueue implements Window.ClosingHandler{
     ChannelSocketListener listener = new ChannelSocketListener();
     if (aAtmosphereClient==null) {
 
-      AtmosphereGWTSerializer myserializer = GWT.create(MessageDeserializer.class);
-      aAtmosphereClient = new AtmosphereClient(GWT.getHostPageBaseURL()+CONNECTURL, myserializer, listener, true);
+      GwtRpcClientSerializer myserializer = GWT.create(MessageDeserializer.class);
+      aAtmosphereClient = Atmosphere.create();
+      RequestConfig requestConfig = AtmosphereRequestConfig.create(myserializer);
+      requestConfig.setUrl(GWT.getHostPageBaseURL()+CONNECTURL);
+      requestConfig.setTransport(Transport.STREAMING);
+      requestConfig.setFallbackTransport(Transport.LONG_POLLING);
+      requestConfig.setOpenHandler(listener);
+      requestConfig.setMessageHandler(listener);
+      aAtmosphereClient.subscribe(requestConfig);
     }
-    aAtmosphereClient.start();
   }
 
   public boolean isUseChannel() {

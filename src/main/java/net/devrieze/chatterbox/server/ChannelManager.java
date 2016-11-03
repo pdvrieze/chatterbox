@@ -3,6 +3,7 @@ package net.devrieze.chatterbox.server;
 import org.atmosphere.cpr.AtmosphereResource;
 import org.atmosphere.cpr.Broadcaster;
 import org.atmosphere.cpr.BroadcasterFactory;
+import org.atmosphere.cpr.DefaultBroadcasterFactory;
 import org.atmosphere.websocket.WebSocketEventListenerAdapter;
 import org.jetbrains.annotations.NotNull;
 
@@ -36,11 +37,6 @@ public class ChannelManager extends WebSocketEventListenerAdapter {
       aBroadCaster.broadcast(message.toXML());
     }
 
-    Broadcaster gwtBroadCaster = BroadcasterFactory.getDefault().lookup(MyGWTCometHandler.BROADCASTERNAME, true);
-    if (gwtBroadCaster!=null) {
-      gwtBroadCaster.broadcast(message.pojoCopy());
-    }
-
     return message;
   }
 
@@ -50,7 +46,7 @@ public class ChannelManager extends WebSocketEventListenerAdapter {
 
   public Broadcaster getBroadcaster() {
     if (aBroadCaster == null) {
-      aBroadCaster = BroadcasterFactory.getDefault().lookup(BROADCASTERNAME, true);
+      aBroadCaster = (new DefaultBroadcasterFactory()).lookup(MyGWTCometHandler.BROADCASTERNAME, true);
     }
     return aBroadCaster;
   }

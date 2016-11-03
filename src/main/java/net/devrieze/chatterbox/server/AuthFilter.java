@@ -45,12 +45,17 @@ public class AuthFilter implements Filter {
   public void doFilter(HttpServletRequest req, @NotNull HttpServletResponse pResponse, FilterChain filterChain) throws IOException, ServletException {
 //    System.err.println("dofilter called for "+req.getRequestURI());
     getLogger().log(Level.FINE, "Calling filter for: "+req.getRequestURI());
-    Principal principal = getPrincipal(req);
     if (req.getRequestURI().startsWith("/accounts/login")) {
       getLogger().log(Level.FINER, "Calling not filtering authentication: "+req.getRequestURI());
       filterChain.doFilter(req, pResponse);
       return;
     }
+
+    if (! req.authenticate(pResponse)) {
+      return; // The underlying mechanism should trigger authentication
+    }
+
+    Principal principal = req.getUserPrincipal();
 
 //    // Allow access to messages without authentication
 //    if ("/messages".equals(req.getServletPath()) && req.getMethod().equals("GET")) {
@@ -60,7 +65,7 @@ public class AuthFilter implements Filter {
 
     try {
       if (principal!=null) {
-        if (isAllowed(principal)) {
+        if (isAllowed(req)) {
           filterChain.doFilter(req, pResponse);
           return;
         } else {
@@ -98,6 +103,8 @@ public class AuthFilter implements Filter {
           }
         }
       } else {
+
+        req.authenticate(pResponse);
         //resp.sendRedirect(userService.createLoginURL(req.getRequestURI()));
         pResponse.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
         pResponse.setContentType("text/html");
@@ -122,15 +129,6 @@ public class AuthFilter implements Filter {
     }
   }
 
-  private Principal getPrincipal(HttpServletRequest req) {
-    Principal result = req.getUserPrincipal();
-    if (result!=null) { return result; }
-
-//    Cookie cookie = getCookie(req, DARWIN_AUTH_COOKIE);
-
-    return req.getUserPrincipal();
-  }
-
   /**
    * Get the login url that will forward the user to the requested page.
    * @param pRequestURI The url to forward to.
@@ -147,8 +145,8 @@ public class AuthFilter implements Filter {
     UserManager.addAllowedUser(principal);
   }
 
-  private static boolean isAllowed(Principal principal) throws SQLException, NamingException {
-    return UserManager.isAllowedUser(principal);
+  private static boolean isAllowed(HttpServletRequest request) throws SQLException, NamingException {
+    return UserManager.isAllowedRequest(request);
   }
 
   @Override
