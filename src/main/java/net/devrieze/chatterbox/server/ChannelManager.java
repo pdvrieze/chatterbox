@@ -2,11 +2,11 @@ package net.devrieze.chatterbox.server;
 
 import org.atmosphere.cpr.AtmosphereResource;
 import org.atmosphere.cpr.Broadcaster;
-import org.atmosphere.cpr.BroadcasterFactory;
 import org.atmosphere.cpr.DefaultBroadcasterFactory;
 import org.atmosphere.websocket.WebSocketEventListenerAdapter;
 import org.jetbrains.annotations.NotNull;
 
+import javax.inject.Inject;
 import javax.naming.NamingException;
 
 import java.security.Principal;
@@ -19,6 +19,8 @@ import java.util.logging.Logger;
 public class ChannelManager extends WebSocketEventListenerAdapter {
 
   static final String BROADCASTERNAME = "chatterbox";
+
+  @Inject
   private Broadcaster aBroadCaster;
 
   Message createNewMessageAndNotify(String messageBody, Principal pSender) throws SQLException, NamingException {
@@ -45,9 +47,9 @@ public class ChannelManager extends WebSocketEventListenerAdapter {
   }
 
   public Broadcaster getBroadcaster() {
-    if (aBroadCaster == null) {
-      aBroadCaster = (new DefaultBroadcasterFactory()).lookup(MyGWTCometHandler.BROADCASTERNAME, true);
-    }
+//    if (aBroadCaster == null) {
+//      aBroadCaster = (new DefaultBroadcasterFactory()).lookup(MyGWTCometHandler.BROADCASTERNAME, true);
+//    }
     return aBroadCaster;
   }
 

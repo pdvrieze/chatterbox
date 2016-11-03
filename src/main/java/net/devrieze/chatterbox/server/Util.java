@@ -296,7 +296,9 @@ public final class Util {
   public static Connection getConnection(String name) throws SQLException, NamingException {
     InitialContext initialContext = new InitialContext();
     DataSource dbHelper = (DataSource) initialContext.lookup(name);
-    return dbHelper.getConnection();
+    final Connection connection = dbHelper.getConnection();
+    connection.setAutoCommit(false);
+    return connection;
   }
 
 }

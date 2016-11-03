@@ -26,5 +26,4 @@
 
   <!--set-property name="user.agent" value="gecko1_8,safari" /-->
 
-  <set-property name="gwt.logging.popupHandler" value="DISABLED"/>
 </module>

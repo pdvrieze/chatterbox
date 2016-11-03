@@ -51,8 +51,10 @@ public class AuthFilter implements Filter {
       return;
     }
 
-    if (! req.authenticate(pResponse)) {
-      return; // The underlying mechanism should trigger authentication
+    if (req.getUserPrincipal()==null && ! (pResponse.isCommitted())) {
+      if (!req.authenticate(pResponse)) {
+        return; // The underlying mechanism should trigger authentication
+      }
     }
 
     Principal principal = req.getUserPrincipal();

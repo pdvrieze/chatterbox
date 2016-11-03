@@ -323,17 +323,16 @@ public class ChatterBoxQueue implements Window.ClosingHandler{
   private void connectToChannel() {
     ChannelSocketListener listener = new ChannelSocketListener();
     if (aAtmosphereClient==null) {
-
-      GwtRpcClientSerializer myserializer = GWT.create(MessageDeserializer.class);
       aAtmosphereClient = Atmosphere.create();
-      RequestConfig requestConfig = AtmosphereRequestConfig.create(myserializer);
-      requestConfig.setUrl(GWT.getHostPageBaseURL()+CONNECTURL);
-      requestConfig.setTransport(Transport.STREAMING);
-      requestConfig.setFallbackTransport(Transport.LONG_POLLING);
-      requestConfig.setOpenHandler(listener);
-      requestConfig.setMessageHandler(listener);
-      aAtmosphereClient.subscribe(requestConfig);
     }
+    GwtRpcClientSerializer myserializer = GWT.create(MessageDeserializer.class);
+    RequestConfig requestConfig = AtmosphereRequestConfig.create(myserializer);
+    requestConfig.setUrl(GWT.getHostPageBaseURL()+CONNECTURL);
+    requestConfig.setTransport(Transport.STREAMING);
+    requestConfig.setFallbackTransport(Transport.LONG_POLLING);
+    requestConfig.setOpenHandler(listener);
+    requestConfig.setMessageHandler(listener);
+    aAtmosphereClient.subscribe(requestConfig);
   }
 
   public boolean isUseChannel() {

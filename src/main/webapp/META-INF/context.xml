@@ -9,5 +9,6 @@
   <Resource name="jdbc/chatbox" auth="Container" type="javax.sql.DataSource"
                maxActive="150" maxIdle="30" maxWait="10000"
                username="chatbox" password="Vf78n3aQLX" driverClassName="com.mysql.jdbc.Driver"
-               url="jdbc:mysql://localhost/chatbox"/>
+               url="jdbc:mysql://localhost/chatbox"
+               defaultAutoCommit="false"/>
 </Context>

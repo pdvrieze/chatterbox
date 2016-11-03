@@ -309,7 +309,11 @@ public class ChatboxManager {
         }
         pConnection.commit();
       } catch (SQLException e) {
-        pConnection.rollback(savePoint);
+        try {
+          pConnection.rollback(savePoint);
+        } catch (SQLException f) {
+          e.addSuppressed(f);
+        }
       }
     } while (retry);
   }

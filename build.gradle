@@ -1,3 +1,5 @@
+import de.richsource.gradle.plugins.gwt.Style
+
 apply plugin: 'idea'
 
 apply plugin: 'gwt'
@@ -36,8 +38,13 @@ task tomcatRun(dependsOn: ["war"]) {
 
 
 gwt {
-    gwtVersion = '2.6.1'
+    gwtVersion = '2.7.0'
     modules 'net.devrieze.chatterbox.Chatterbox'
+//
+//    compiler {
+//        draftCompile = true
+//        style = Style.PRETTY
+//    }
 //    devModules 'net.devrieze.chatterbox.ChatterboxDraft'
 }
 
@@ -47,9 +54,11 @@ tomcat {
 }
 */
 dependencies {
-    compile 'org.atmosphere.extensions:atmosphere-gwt20-server:2.3.2'
+    compile 'org.atmosphere.extensions:atmosphere-gwt20-server:2.3.2-gwt27'
     compile 'org.atmosphere:atmosphere-runtime:2.3.2'
-    compileOnly 'org.atmosphere.extensions:atmosphere-gwt20-client:2.3.2'
+    compile 'javax.inject:javax.inject:1'
+    runtime 'org.webjars:atmosphere-javascript:2.3.2'
+    compileOnly 'org.atmosphere.extensions:atmosphere-gwt20-client:2.3.2-gwt27'
     compileOnly "org.apache.tomcat:tomcat-servlet-api:${tomcatVersion}"
     providedCompile "org.jetbrains:annotations:13.0"
     providedCompile "com.google.gwt:gwt-user:${gwt.gwtVersion}"

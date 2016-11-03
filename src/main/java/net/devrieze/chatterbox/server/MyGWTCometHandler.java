@@ -1,16 +1,12 @@
 package net.devrieze.chatterbox.server;
 
+import org.atmosphere.cpr.AtmosphereResource;
+import org.atmosphere.gwt20.shared.Constants;
+import org.atmosphere.handler.AbstractReflectorAtmosphereHandler;
+
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
-
-import javax.servlet.ServletException;
-
-import org.atmosphere.cpr.AtmosphereResource;
-import org.atmosphere.cpr.Broadcaster;
-import org.atmosphere.cpr.BroadcasterFactory;
-import org.atmosphere.gwt20.shared.Constants;
-import org.atmosphere.handler.AbstractReflectorAtmosphereHandler;
 
 
 public class MyGWTCometHandler extends AbstractReflectorAtmosphereHandler {
