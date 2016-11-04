@@ -43,14 +43,9 @@ task tomcatRun(dependsOn: ["war"]) {
 
 
 gwt {
-    gwtVersion = myGwtVersion
     modules 'net.devrieze.chatterbox.Chatterbox'
-//
-//    compiler {
-//        draftCompile = true
-//        style = Style.PRETTY
-//    }
-//    devModules 'net.devrieze.chatterbox.ChatterboxDraft'
+
+    devModules 'net.devrieze.chatterbox.ChatterboxDraft'
 }
 
 
@@ -60,10 +55,9 @@ dependencies {
     runtime "org.webjars:atmosphere-javascript:${myAtmosphereClientVersion}"
 
     compile "org.atmosphere:atmosphere-runtime:${myAtmosphereVersion}"
-    compile "org.atmosphere.extensions:atmosphere-gwt20-server:${myAtmosphereGwtVersion}"
-    compile "org.atmosphere.extensions:atmosphere-gwt20-jackson:${myAtmosphereGwtVersion}"
 
-    compileOnly "com.google.gwt:gwt-user:${gwt.gwtVersion}"
+    compileOnly "com.google.gwt:gwt-user:${myGwtVersion}"
+    gwt "com.google.gwt:gwt-codeserver:${myGwtVersion}"
 
     compile "javax.inject:javax.inject:1"
 

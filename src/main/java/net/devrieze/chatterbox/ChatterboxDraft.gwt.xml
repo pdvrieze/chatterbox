@@ -1,0 +1,4 @@
+<module rename-to="Chatterbox">
+    <inherits name="net.devrieze.chatterbox.Chatterbox" />
+    <collapse-all-properties />
+</module>
