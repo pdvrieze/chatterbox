@@ -6,7 +6,6 @@
   <component name="ChangeListManager">
     <list default="true" id="676d9beb-0ae5-4792-81a0-ac6df012ce52" name="Default" comment="">
       <change type="DELETED" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.gitignore" afterPath="$PROJECT_DIR$/.gitignore" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/main/java/net/devrieze/chatterbox/server/ChannelManager.java" afterPath="$PROJECT_DIR$/src/main/java/net/devrieze/chatterbox/server/ChannelManager.java" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/main/java/net/devrieze/chatterbox/server/ChatterboxServlet.java" afterPath="$PROJECT_DIR$/src/main/java/net/devrieze/chatterbox/server/ChatterboxServlet.java" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/main/java/net/devrieze/chatterbox/server/MyGWTCometHandler.java" afterPath="$PROJECT_DIR$/src/main/java/net/devrieze/chatterbox/server/MyGWTCometHandler.java" />
@@ -196,11 +195,21 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="AuthFilter.java" pinned="false" current-in-tab="true">
+      <file leaf-file-name="AuthFilter.java" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/src/main/java/net/devrieze/chatterbox/server/AuthFilter.java">
           <provider selected="true" editor-type-id="text-editor">
             <state relative-caret-position="75">
               <caret line="22" column="32" selection-start-line="22" selection-start-column="32" selection-end-line="22" selection-end-column="32" />
+              <folding />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="MANIFEST.MF" pinned="false" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/src/main/webapp/META-INF/MANIFEST.MF">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="45">
+              <caret line="3" column="0" selection-start-line="3" selection-start-column="0" selection-end-line="3" selection-end-column="0" />
               <folding />
             </state>
           </provider>
@@ -704,6 +713,7 @@
         <option value="$PROJECT_DIR$/src/main/java/net/devrieze/chatterbox/Chatterbox.gwt.xml" />
         <option value="$PROJECT_DIR$/src/main/java/net/devrieze/chatterbox/client/ChatterBoxQueue.java" />
         <option value="$PROJECT_DIR$/.gitignore" />
+        <option value="$PROJECT_DIR$/src/main/webapp/META-INF/MANIFEST.MF" />
       </list>
     </option>
   </component>
@@ -1740,7 +1750,7 @@
       <workItem from="1478175069241" duration="11633000" />
       <workItem from="1478207214236" duration="21000" />
       <workItem from="1478266405636" duration="6996000" />
-      <workItem from="1478290265175" duration="2392000" />
+      <workItem from="1478290265175" duration="2452000" />
     </task>
     <task id="LOCAL-00001" summary="Make it work in Idea. Remove dependencies on other modules (mainly remove usage of &quot;dodgy&quot; database helper classes)">
       <created>1448016610128</created>
@@ -1791,7 +1801,14 @@
       <option name="project" value="LOCAL" />
       <updated>1478292513231</updated>
     </task>
-    <option name="localTasksCounter" value="8" />
+    <task id="LOCAL-00008" summary="Tidy up the project.">
+      <created>1478292663882</created>
+      <option name="number" value="00008" />
+      <option name="presentableId" value="LOCAL-00008" />
+      <option name="project" value="LOCAL" />
+      <updated>1478292663882</updated>
+    </task>
+    <option name="localTasksCounter" value="9" />
     <servers>
       <GitHub shared="false" url="https://github.com">
         <option name="assignedIssuesOnly" value="false" />
@@ -1812,7 +1829,7 @@
     </servers>
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="51937000" />
+    <option name="totallyTimeSpent" value="51997000" />
   </component>
   <component name="TodoView">
     <todo-panel id="selected-file">
@@ -1825,7 +1842,7 @@
   </component>
   <component name="ToolWindowManager">
     <frame x="0" y="0" width="1920" height="1050" extended-state="6" />
-    <editor active="false" />
+    <editor active="true" />
     <layout>
       <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32890365" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
       <window_info id="Messages" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32668883" sideWeight="0.5" order="11" side_tool="false" content_ui="tabs" />
@@ -1834,7 +1851,7 @@
       <window_info id="Capture Analysis" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="4" side_tool="false" content_ui="tabs" />
       <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.3298122" sideWeight="0.503231" order="7" side_tool="true" content_ui="tabs" />
       <window_info id="Maven Projects" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="5" side_tool="false" content_ui="tabs" />
-      <window_info id="Version Control" active="true" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.25027686" sideWeight="0.5" order="9" side_tool="false" content_ui="tabs" />
+      <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.25027686" sideWeight="0.5" order="9" side_tool="false" content_ui="tabs" />
       <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.27796236" sideWeight="0.49676898" order="2" side_tool="false" content_ui="tabs" />
       <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32668883" sideWeight="0.5" order="10" side_tool="false" content_ui="tabs" />
       <window_info id="Capture Tool" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
@@ -1880,7 +1897,8 @@
     <MESSAGE value="Make sure that the authentication filter supports asynchronous use." />
     <MESSAGE value="Line ending change." />
     <MESSAGE value="Return a string not a charsequence." />
-    <option name="LAST_COMMIT_MESSAGE" value="Return a string not a charsequence." />
+    <MESSAGE value="Tidy up the project." />
+    <option name="LAST_COMMIT_MESSAGE" value="Tidy up the project." />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
@@ -1938,13 +1956,6 @@
     <option name="FILTER_TARGETS" value="false" />
   </component>
   <component name="editorHistoryManager">
-    <entry file="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/com.google.gwt/gwt-dev/2.4.0/c0f88ffb55c1fdc87abbbbdb5ca56008b7a37a48/gwt-dev-2.4.0.jar!/org/apache/catalina/connector/RequestFacade.class">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="1155">
-          <caret line="145" column="0" selection-start-line="145" selection-start-column="0" selection-end-line="145" selection-end-column="0" />
-        </state>
-      </provider>
-    </entry>
     <entry file="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/com.google.gwt/gwt-dev/2.4.0/c0f88ffb55c1fdc87abbbbdb5ca56008b7a37a48/gwt-dev-2.4.0.jar!/org/apache/catalina/connector/ResponseFacade.class">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="1410">
@@ -2380,6 +2391,14 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="75">
           <caret line="22" column="32" selection-start-line="22" selection-start-column="32" selection-end-line="22" selection-end-column="32" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/webapp/META-INF/MANIFEST.MF">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="45">
+          <caret line="3" column="0" selection-start-line="3" selection-start-column="0" selection-end-line="3" selection-end-column="0" />
           <folding />
         </state>
       </provider>
