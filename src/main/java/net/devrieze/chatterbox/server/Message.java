@@ -30,7 +30,7 @@ public class Message extends MessagePojo{
     result.append("\" epoch=\"").append(getMsgTime());
     if (getSender()!=null) { result.append("\" from=\"").append(Util.encodeHtml(getSender())); }
     result.append("\">").append(messageBody).append("</message>\n");
-    return result;
+    return result.toString();
   }
 
   @Override
