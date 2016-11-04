@@ -8,6 +8,7 @@
 	<filter>
 		<filter-name>myauth</filter-name>
 		<filter-class>net.devrieze.chatterbox.server.AuthFilter</filter-class>
+		<async-supported>true</async-supported>
 	</filter>
 
 	<filter-mapping>
@@ -44,8 +45,9 @@
 			<param-name>org.atmosphere.disableOnStateEvent</param-name>
 			<param-value>true</param-value>
 		</init-param>
-  	<load-on-startup>1</load-on-startup>
+	  	<load-on-startup>1</load-on-startup>
 	  <!--Uncomment if you want to use Servlet 3.0 Async Support -->
+		<async-supported>true</async-supported>
   </servlet>
 
 
@@ -58,6 +60,7 @@
 			<param-value>net.devrieze.chatterbox.server.ChatterboxServlet</param-value>
 		</init-param>
 		<load-on-startup>0</load-on-startup>
+		<async-supported>true</async-supported>
 	</servlet>
 
 	<servlet>
