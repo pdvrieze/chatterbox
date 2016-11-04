@@ -20,7 +20,12 @@ buildscript {
 }
 
 ext {
-    tomcatVersion = '7.0.68'
+    myTomcatVersion = '7.0.68'
+    myGwtVersion='2.6.1'
+    myAtmosphereVersion='2.4.7'
+    myAtmosphereExtVersion='2.4.3'
+    myAtmosphereClientVersion='2.3.2'
+    myAtmosphereGwtVersion="${myAtmosphereExtVersion}"
 }
 
 version = '1.1.0'
@@ -38,7 +43,7 @@ task tomcatRun(dependsOn: ["war"]) {
 
 
 gwt {
-    gwtVersion = '2.7.0'
+    gwtVersion = myGwtVersion
     modules 'net.devrieze.chatterbox.Chatterbox'
 //
 //    compiler {
@@ -54,15 +59,21 @@ tomcat {
 }
 */
 dependencies {
-    compile 'org.atmosphere.extensions:atmosphere-gwt20-server:2.3.2-gwt27'
-    compile 'org.atmosphere:atmosphere-runtime:2.3.2'
-    compile 'javax.inject:javax.inject:1'
-    runtime 'org.webjars:atmosphere-javascript:2.3.2'
-    compileOnly 'org.atmosphere.extensions:atmosphere-gwt20-client:2.3.2-gwt27'
-    compileOnly "org.apache.tomcat:tomcat-servlet-api:${tomcatVersion}"
+    compileOnly "org.atmosphere.extensions:atmosphere-gwt20-client:${myAtmosphereGwtVersion}"
+//    runtime ("org.atmosphere.client:javascript:${myAtmosphereClientVersion}") {transitive = true}
+    runtime "org.webjars:atmosphere-javascript:${myAtmosphereClientVersion}"
+
+    compile "org.atmosphere:atmosphere-runtime:${myAtmosphereVersion}"
+    compile "org.atmosphere.extensions:atmosphere-gwt20-server:${myAtmosphereGwtVersion}"
+    compile "org.atmosphere.extensions:atmosphere-gwt20-jackson:${myAtmosphereGwtVersion}"
+
+    compileOnly "com.google.gwt:gwt-user:${gwt.gwtVersion}"
+    runtime "com.google.gwt:gwt-servlet:${gwt.gwtVersion}"
+
+    compile "javax.inject:javax.inject:1"
+
+//    compileOnly "org.apache.tomcat:tomcat-servlet-api:${myTomcatVersion}"
     providedCompile "org.jetbrains:annotations:13.0"
-    providedCompile "com.google.gwt:gwt-user:${gwt.gwtVersion}"
-//    compileOnly "com.google.gwt:gwt-dev:${gwt.gwtVersion}"
     runtime 'mysql:mysql-connector-java:5.1.36'
 
 }

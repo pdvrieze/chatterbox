@@ -16,3 +16,6 @@
 /*.jar
 /build/
 *.swp
+/.idea/artifacts/
+/.idea/dataSources/
+/.idea/workspace.xml

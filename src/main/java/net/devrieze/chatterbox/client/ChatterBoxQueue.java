@@ -3,6 +3,7 @@ package net.devrieze.chatterbox.client;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.google.gwt.user.client.rpc.SerializationException;
 import org.atmosphere.gwt20.client.*;
 import org.atmosphere.gwt20.client.AtmosphereRequestConfig.Transport;
 
@@ -28,9 +29,6 @@ import com.google.gwt.xml.client.impl.DOMParseException;
 
 public class ChatterBoxQueue implements Window.ClosingHandler{
 
-  @GwtRpcSerialTypes({MessagePojo.class})
-  public abstract static class MessageDeserializer extends GwtRpcClientSerializer { /* Extension point does not need implementation */ }
-
   private final class ChannelSocketListener implements AtmosphereOpenHandler, AtmosphereMessageHandler {
 
     @Override
@@ -53,6 +51,24 @@ public class ChatterBoxQueue implements Window.ClosingHandler{
     private void onMessage(List<?> pMessages) {
       eventBus.fireEventFromSource(new StatusEvent(StatusLevel.DEBUG, "Received channel messages (#"+pMessages.size()+")"),ChatterBoxQueue.this);
       handleMessagesReceived(pMessages);
+    }
+  }
+
+  private class MessageSerializer implements ClientSerializer {
+
+    @Override
+    public Object deserialize(final String message) throws SerializationException {
+      return message;
+    }
+
+    @Override
+    public String serialize(final Object message) throws SerializationException {
+      if (message instanceof MessagePojo) {
+        return ((MessagePojo) message).getMessageBody();
+      } else if (message instanceof CharSequence) {
+        return message.toString();
+      }
+      throw new IllegalArgumentException("Unsupported message type: "+message.getClass());
     }
   }
 
@@ -325,7 +341,9 @@ public class ChatterBoxQueue implements Window.ClosingHandler{
     if (aAtmosphereClient==null) {
       aAtmosphereClient = Atmosphere.create();
     }
-    GwtRpcClientSerializer myserializer = GWT.create(MessageDeserializer.class);
+
+//    myserializer = GWT.create(MessageDeserializer.class);
+    ClientSerializer myserializer = new MessageSerializer();
     RequestConfig requestConfig = AtmosphereRequestConfig.create(myserializer);
     requestConfig.setUrl(GWT.getHostPageBaseURL()+CONNECTURL);
     requestConfig.setTransport(Transport.STREAMING);
@@ -352,7 +370,7 @@ public class ChatterBoxQueue implements Window.ClosingHandler{
 
         @Override
         public void onResponseReceived(Request request, Response response) {
-          handleMessagesReceived(request, response);
+//          handleMessagesReceived(request, response);
         }
 
         @Override
