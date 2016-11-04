@@ -5,6 +5,7 @@ import org.jetbrains.annotations.NotNull;
 
 import javax.naming.NamingException;
 import javax.servlet.*;
+import javax.servlet.annotation.WebFilter;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
@@ -19,6 +20,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 
+@WebFilter(asyncSupported = true)
 public class AuthFilter implements Filter {
 
 //  private static final String DARWIN_AUTH_COOKIE = "DWNID";
