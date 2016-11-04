@@ -53,11 +53,7 @@ gwt {
 //    devModules 'net.devrieze.chatterbox.ChatterboxDraft'
 }
 
-/*
-tomcat {
-    contextPath='/PEUserMessageHandler'
-}
-*/
+
 dependencies {
     compileOnly "org.atmosphere.extensions:atmosphere-gwt20-client:${myAtmosphereGwtVersion}"
 //    runtime ("org.atmosphere.client:javascript:${myAtmosphereClientVersion}") {transitive = true}
@@ -68,11 +64,9 @@ dependencies {
     compile "org.atmosphere.extensions:atmosphere-gwt20-jackson:${myAtmosphereGwtVersion}"
 
     compileOnly "com.google.gwt:gwt-user:${gwt.gwtVersion}"
-    runtime "com.google.gwt:gwt-servlet:${gwt.gwtVersion}"
 
     compile "javax.inject:javax.inject:1"
 
-//    compileOnly "org.apache.tomcat:tomcat-servlet-api:${myTomcatVersion}"
     providedCompile "org.jetbrains:annotations:13.0"
     runtime 'mysql:mysql-connector-java:5.1.36'
 
