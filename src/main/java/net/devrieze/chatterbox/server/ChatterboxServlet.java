@@ -2,7 +2,9 @@ package net.devrieze.chatterbox.server;
 
 import net.devrieze.chatterbox.server.ChatboxManager.BoxAdapter;
 import net.devrieze.chatterbox.server.ChatboxManager.MessageAdapter;
+import org.atmosphere.cpr.AtmosphereConfig;
 import org.atmosphere.cpr.Broadcaster;
+import org.atmosphere.cpr.BroadcasterFactory;
 import org.atmosphere.cpr.Meteor;
 import org.jetbrains.annotations.NotNull;
 
@@ -25,6 +27,7 @@ import java.sql.SQLException;
 import java.util.logging.Logger;
 
 import static org.atmosphere.cpr.AtmosphereResource.TRANSPORT.LONG_POLLING;
+import static org.atmosphere.cpr.FrameworkConfig.ATMOSPHERE_CONFIG;
 
 
 public class ChatterboxServlet extends HttpServlet {
@@ -39,9 +42,20 @@ public class ChatterboxServlet extends HttpServlet {
 
   private static final Object MIME_TYPE_COMET = "application/comet";
 
-  private ChannelManager channelManager = new ChannelManager();
+  private ChannelManager __channelManager;
 
-  private static enum Method {
+  public ChannelManager getChannelManager() {
+    if (__channelManager==null) {
+      AtmosphereConfig config = (AtmosphereConfig) getServletContext().getAttribute(ATMOSPHERE_CONFIG);
+      BroadcasterFactory factory = config.getBroadcasterFactory();
+
+      Broadcaster broadcaster = factory.lookup(MyGWTCometHandler.BROADCASTERNAME, true);
+      __channelManager = new ChannelManager(broadcaster);
+    }
+    return __channelManager;
+  }
+
+  private enum Method {
     GET,
     POST,
     DELETE,
@@ -281,7 +295,7 @@ public class ChatterboxServlet extends HttpServlet {
       }
     }
 
-    Message m = channelManager.createNewMessageAndNotify(Util.sanitizeHtml(message.toString()), req.getUserPrincipal());
+    Message m = getChannelManager().createNewMessageAndNotify(Util.sanitizeHtml(message.toString()), req.getUserPrincipal());
     resp.getWriter().append("<?xml version=\"1.0\"?>\n").append(m.toXML());
     resp.setStatus(HttpServletResponse.SC_OK);
     return true;
@@ -501,6 +515,7 @@ public class ChatterboxServlet extends HttpServlet {
 
 
   private boolean handleConnect(HttpServletRequest req, HttpServletResponse resp) {
+    final ChannelManager channelManager = getChannelManager();
     Meteor m = Meteor.build(req).addListener(channelManager);
     // TODO do we really need to do this?
     if (MIME_TYPE_COMET.equals(req.getContentType())){
@@ -563,7 +578,9 @@ public class ChatterboxServlet extends HttpServlet {
   public void destroy() {
     ChatboxManager.destroy();
     UserManager.destroy();
-    channelManager.destroy();
+    if (__channelManager!=null) {
+      getChannelManager().destroy();
+    }
     super.destroy();
   }
 

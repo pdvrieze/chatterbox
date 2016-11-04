@@ -1,8 +1,6 @@
 package net.devrieze.chatterbox.server;
 
-import org.atmosphere.cpr.AtmosphereResource;
-import org.atmosphere.cpr.Broadcaster;
-import org.atmosphere.cpr.DefaultBroadcasterFactory;
+import org.atmosphere.cpr.*;
 import org.atmosphere.websocket.WebSocketEventListenerAdapter;
 import org.jetbrains.annotations.NotNull;
 
@@ -18,10 +16,13 @@ import java.util.logging.Logger;
 
 public class ChannelManager extends WebSocketEventListenerAdapter {
 
-  static final String BROADCASTERNAME = "chatterbox";
+  private final Broadcaster aBroadCaster;
 
-  @Inject
-  private Broadcaster aBroadCaster;
+  public ChannelManager(Broadcaster broadcaster) {
+    if (broadcaster==null) { throw new IllegalArgumentException(); }
+    aBroadCaster = broadcaster;
+  }
+
 
   Message createNewMessageAndNotify(String messageBody, Principal pSender) throws SQLException, NamingException {
     Message message;
@@ -31,13 +32,7 @@ public class ChannelManager extends WebSocketEventListenerAdapter {
       connection.commit();
     }
 
-    if (aBroadCaster==null) {
-      getBroadcaster();
-    }
-
-    if (aBroadCaster!=null) {
-      aBroadCaster.broadcast(message.toXML());
-    }
+    aBroadCaster.broadcast(message);
 
     return message;
   }
@@ -46,21 +41,15 @@ public class ChannelManager extends WebSocketEventListenerAdapter {
     return ChatboxManager.getBox(pConnection, ChatterboxServlet.DEFAULT_BOX);
   }
 
-  public Broadcaster getBroadcaster() {
-//    if (aBroadCaster == null) {
-//      aBroadCaster = (new DefaultBroadcasterFactory()).lookup(MyGWTCometHandler.BROADCASTERNAME, true);
-//    }
-    return aBroadCaster;
+  public void destroy() {
+    for(AtmosphereResource resource: aBroadCaster.getAtmosphereResources()) {
+      resource.resume();
+    }
+    aBroadCaster.destroy();
+    Logger.getAnonymousLogger().log(Level.INFO, "Shutting down atmosphere broadcaster");
   }
 
-  public void destroy() {
-    if (aBroadCaster!=null) {
-      for(AtmosphereResource resource: aBroadCaster.getAtmosphereResources()) {
-        resource.resume();
-      }
-      aBroadCaster.destroy();
-      aBroadCaster=null;
-      Logger.getAnonymousLogger().log(Level.INFO, "Shutting down atmosphere broadcaster");
-    }
+  public Broadcaster getBroadcaster() {
+    return aBroadCaster;
   }
 }
